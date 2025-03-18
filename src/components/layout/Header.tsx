@@ -1,8 +1,10 @@
 import React from "react";
-import { Bell, Settings, User } from "lucide-react";
+import { Bell, Settings, User, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +23,44 @@ interface HeaderProps {
 }
 
 const Header = ({
-  userName = "John Doe",
-  userAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-  isAuthenticated = true,
-  sessionTimeRemaining = 30,
+  userName,
+  userAvatar,
+  isAuthenticated: propIsAuthenticated,
+  sessionTimeRemaining: propSessionTimeRemaining,
   notificationCount = 3,
 }: HeaderProps) => {
+  const {
+    isAuthenticated,
+    currentUser,
+    sessionTimeRemaining,
+    logout,
+    refreshSession,
+  } = useAuth();
+  const navigate = useNavigate();
+
+  // Use props if provided, otherwise use context values
+  const effectiveIsAuthenticated =
+    propIsAuthenticated !== undefined ? propIsAuthenticated : isAuthenticated;
+  const effectiveSessionTimeRemaining =
+    propSessionTimeRemaining !== undefined
+      ? propSessionTimeRemaining
+      : sessionTimeRemaining;
+  const effectiveUserName = userName || currentUser?.name || "Guest";
+  const effectiveUserAvatar =
+    userAvatar ||
+    currentUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${effectiveUserName}`;
+  const userRole = currentUser?.role || "user";
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const handleRefreshSession = () => {
+    refreshSession();
+  };
+
   return (
     <header className="w-full h-20 px-6 bg-background border-b border-border flex items-center justify-between">
       <div className="flex-1">
@@ -37,24 +71,39 @@ const Header = ({
         {/* Authentication Status Indicator */}
         <div className="flex items-center">
           <Badge
-            variant={isAuthenticated ? "default" : "destructive"}
+            variant={effectiveIsAuthenticated ? "default" : "destructive"}
             className="mr-2"
           >
-            {isAuthenticated ? "Authenticated" : "Not Authenticated"}
+            {effectiveIsAuthenticated ? "Authenticated" : "Not Authenticated"}
           </Badge>
 
-          {/* Session Timeout Warning */}
-          {isAuthenticated && sessionTimeRemaining <= 5 && (
-            <Badge variant="destructive" className="animate-pulse">
-              Session expires in {sessionTimeRemaining} min
+          {/* User Role Indicator */}
+          {effectiveIsAuthenticated && (
+            <Badge variant="outline" className="mr-2">
+              {userRole.replace("_", " ")}
             </Badge>
           )}
 
-          {isAuthenticated &&
-            sessionTimeRemaining > 5 &&
-            sessionTimeRemaining <= 10 && (
-              <Badge variant="secondary">
-                Session: {sessionTimeRemaining} min
+          {/* Session Timeout Warning */}
+          {effectiveIsAuthenticated && effectiveSessionTimeRemaining <= 5 && (
+            <Badge
+              variant="destructive"
+              className="animate-pulse cursor-pointer"
+              onClick={handleRefreshSession}
+            >
+              Session expires in {effectiveSessionTimeRemaining} min
+            </Badge>
+          )}
+
+          {effectiveIsAuthenticated &&
+            effectiveSessionTimeRemaining > 5 &&
+            effectiveSessionTimeRemaining <= 10 && (
+              <Badge
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={handleRefreshSession}
+              >
+                Session: {effectiveSessionTimeRemaining} min
               </Badge>
             )}
         </div>
@@ -122,7 +171,10 @@ const Header = ({
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Settings</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => navigate("/settings")}
+            >
               Account Settings
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">
@@ -134,6 +186,25 @@ const Header = ({
             <DropdownMenuItem className="cursor-pointer">
               Security
             </DropdownMenuItem>
+            {userRole === "central_bank" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => navigate("/user-management")}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  User Management
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => navigate("/user-documentation")}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Documentation
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer">
               Help & Support
@@ -146,12 +217,17 @@ const Header = ({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center space-x-2 p-1">
               <Avatar>
-                <AvatarImage src={userAvatar} alt={userName} />
+                <AvatarImage
+                  src={effectiveUserAvatar}
+                  alt={effectiveUserName}
+                />
                 <AvatarFallback>
-                  {userName.slice(0, 2).toUpperCase()}
+                  {effectiveUserName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden md:inline-block">{userName}</span>
+              <span className="hidden md:inline-block">
+                {effectiveUserName}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -159,20 +235,23 @@ const Header = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => (window.location.href = "/profile")}
+              onClick={() => navigate("/profile")}
             >
               <User className="mr-2 h-4 w-4" />
               Profile
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => (window.location.href = "/settings")}
+              onClick={() => navigate("/settings")}
             >
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive cursor-pointer">
+            <DropdownMenuItem
+              className="text-destructive cursor-pointer"
+              onClick={handleLogout}
+            >
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cb-001",
+    "username": "central_bank",
+    "passwordHash": "$2a$10$8KVj5Sv4K8k5aQGiEMOg7eP3W9A2rVgQX9x9X9X9X9X9X9X9X9",
+    "role": "central_bank",
+    "name": "Federal Reserve",
+    "email": "admin@federalreserve.gov",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=FederalReserve",
+    "lastLogin": "2023-09-15T14:30:00Z"
+  },
+  {
+    "id": "cmb-001",
+    "username": "commercial_bank",
+    "passwordHash": "$2a$10$8KVj5Sv4K8k5aQGiEMOg7eP3W9A2rVgQX9x9X9X9X9X9X9X9X9",
+    "role": "commercial_bank",
+    "name": "First National Bank",
+    "email": "admin@firstnational.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=FirstNational",
+    "lastLogin": "2023-09-14T09:15:00Z"
+  },
+  {
+    "id": "usr-001",
+    "username": "user",
+    "passwordHash": "$2a$10$8KVj5Sv4K8k5aQGiEMOg7eP3W9A2rVgQX9x9X9X9X9X9X9X9X9",
+    "role": "user",
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
+    "lastLogin": "2023-09-16T10:45:00Z"
+  }
+]

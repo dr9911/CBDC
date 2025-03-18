@@ -1,6 +1,8 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { useAuth } from "@/context/AuthContext";
 
 interface DashboardLayoutProps {
   children?: ReactNode;
@@ -14,13 +16,32 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({
   children,
-  activePage = "dashboard",
-  userName = "John Doe",
-  userAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-  isAuthenticated = true,
-  sessionTimeRemaining = 15,
+  activePage: propActivePage,
+  userName,
+  userAvatar,
+  isAuthenticated,
+  sessionTimeRemaining,
   notificationCount = 3,
 }: DashboardLayoutProps) => {
+  const location = useLocation();
+  const { currentUser } = useAuth();
+
+  // Determine active page based on current path
+  const getActivePageFromPath = () => {
+    const path = location.pathname;
+    if (path === "/") return "dashboard";
+    // Remove leading slash and return the path
+    return path.substring(1);
+  };
+
+  // Use prop if provided, otherwise determine from path
+  const activePage = propActivePage || getActivePageFromPath();
+
+  // Format last login time
+  const lastLoginTime = currentUser?.lastLogin
+    ? new Date(currentUser.lastLogin).toLocaleString()
+    : "Never";
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Sidebar navigation */}
@@ -59,7 +80,7 @@ const DashboardLayout = ({
           <div className="flex justify-between items-center">
             <div>© 2025 DUAL Platform. All rights reserved.</div>
             <div className="flex items-center space-x-4">
-              <span>Last Login: Today, 09:45 AM</span>
+              <span>Last Login: {lastLoginTime}</span>
             </div>
           </div>
         </footer>
