@@ -7,6 +7,7 @@ import TransactionList from "./dashboard/TransactionList";
 import TransactionForm from "./transactions/TransactionForm";
 import QRCodeScanner from "./transactions/QRCodeScanner";
 import QRCodeGenerator from "./transactions/QRCodeGenerator";
+import { useAuth } from "@/context/AuthContext";
 
 interface HomeProps {
   userName?: string;
@@ -37,10 +38,10 @@ interface HomeProps {
 }
 
 const Home = ({
-  userName = "John Doe",
-  userAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-  isAuthenticated = true,
-  sessionTimeRemaining = 15,
+  userName,
+  userAvatar,
+  isAuthenticated,
+  sessionTimeRemaining,
   notificationCount = 3,
   accountData = {
     accountNumber: "DUAL-1234-5678-9012",
@@ -97,6 +98,13 @@ const Home = ({
     },
   ],
 }: HomeProps) => {
+  const { currentUser } = useAuth();
+  const effectiveUserName = userName || currentUser?.name || "John Doe";
+  const effectiveUserAvatar =
+    userAvatar ||
+    currentUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=John`;
+
   // Function to handle viewing transaction details
   const handleViewTransaction = (id: string) => {
     console.log(`View transaction details for ID: ${id}`);
@@ -111,8 +119,8 @@ const Home = ({
 
   return (
     <DashboardLayout
-      userName={userName}
-      userAvatar={userAvatar}
+      userName={effectiveUserName}
+      userAvatar={effectiveUserAvatar}
       isAuthenticated={isAuthenticated}
       sessionTimeRemaining={sessionTimeRemaining}
       notificationCount={notificationCount}
@@ -275,7 +283,7 @@ const Home = ({
         <div className="hidden">
           <QRCodeGenerator
             accountId={accountData.accountNumber}
-            accountName={userName}
+            accountName={effectiveUserName}
           />
         </div>
       </div>
