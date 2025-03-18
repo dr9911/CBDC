@@ -112,20 +112,20 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
   ];
 
   // Support and security items
-  const supportItems = [
-    {
-      id: "help",
-      label: "Help & Support",
-      icon: <HelpCircle size={20} />,
-      path: "/help",
-    },
-    {
-      id: "security",
-      label: "Security Center",
-      icon: <Shield size={20} />,
-      path: "/security",
-    },
-  ];
+  // const supportItems = [
+  //   {
+  //     id: "help",
+  //     label: "Help & Support",
+  //     icon: <HelpCircle size={20} />,
+  //     path: "/help",
+  //   },
+  //   {
+  //     id: "security",
+  //     label: "Security Center",
+  //     icon: <Shield size={20} />,
+  //     path: "/security",
+  //   },
+  // ];
 
   return (
     <aside className="h-full w-[280px] bg-background border-r border-border flex flex-col p-4">
@@ -143,7 +143,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       </div>
 
       {/* Security status indicator */}
-      <div className="mb-6 bg-muted rounded-lg p-3">
+      {/* <div className="mb-6 bg-muted rounded-lg p-3">
         <div className="flex items-center">
           <Shield className="text-green-500 mr-2" size={18} />
           <span className="text-sm font-medium">Secure Connection</span>
@@ -160,7 +160,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
             Session expires in {sessionTimeRemaining} min
           </span>
         </div>
-      </div>
+      </div> */}
 
       {/* User role indicator */}
       <div className="mb-4 px-2">
@@ -198,7 +198,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       <Separator className="my-4" />
 
       {/* Support and security section */}
-      <div className="space-y-1 mb-6">
+      {/* <div className="space-y-1 mb-6">
         {supportItems.map((item) => (
           <TooltipProvider key={item.id}>
             <Tooltip>
@@ -217,7 +217,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
             </Tooltip>
           </TooltipProvider>
         ))}
-      </div>
+      </div> */}
 
       {/* Spacer to push logout to bottom */}
       <div className="flex-grow" />
