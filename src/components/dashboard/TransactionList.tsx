@@ -91,7 +91,7 @@ const TransactionList = ({
       type: "incoming",
       amount: 500.0,
       recipient: "Client Payment",
-      status: "pending",
+      status: "completed",
     },
   ],
   onViewTransaction = () => {},

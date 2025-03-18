@@ -97,6 +97,7 @@ const MintNewSupply = ({
   const [showMfaDialog, setShowMfaDialog] = useState<boolean>(false);
   const [mfaCode, setMfaCode] = useState<string>("");
   const [step, setStep] = useState<number>(1);
+  const [supply, setSupply] = useState<number>(totalSupply);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -136,10 +137,15 @@ const MintNewSupply = ({
     }
   };
 
-  const handleConfirmMinting = () => {
+  const handleConfirmMinting = async () => {
     setShowConfirmDialog(false);
     setShowMfaDialog(true);
+    setTimeout(() => {
+      setSupply(prevSupply => prevSupply + parseInt(mintAmount, 10));
+    }, 60000);  
+
   };
+  
 
   const handleVerifyMfa = () => {
     // In a real app, this would verify the MFA code with the backend
@@ -188,7 +194,7 @@ const MintNewSupply = ({
             <CardContent>
               <div className="flex items-end justify-between">
                 <div className="text-2xl font-bold">
-                  {formatCurrency(totalSupply)} DUAL
+                  {formatCurrency(supply)} DUAL
                 </div>
                 <Banknote className="h-5 w-5 text-blue-500" />
               </div>
@@ -198,7 +204,7 @@ const MintNewSupply = ({
             </CardContent>
           </Card>
 
-          <Card className="bg-card">
+          {/* <Card className="bg-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Circulating Supply
@@ -224,7 +230,7 @@ const MintNewSupply = ({
                 />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Minting Form */}
@@ -287,7 +293,7 @@ const MintNewSupply = ({
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {/* <div className="space-y-4">
                 <div className="bg-muted/30 p-4 rounded-lg border border-border">
                   <h3 className="font-medium mb-3 flex items-center gap-2">
                     <Shield className="h-4 w-4 text-primary" />
@@ -362,7 +368,7 @@ const MintNewSupply = ({
                     </li>
                   </ol>
                 </div>
-              </div>
+              </div> */}
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2 border-t pt-4">

@@ -94,7 +94,7 @@ const Home = ({
       type: "incoming",
       amount: 500.0,
       recipient: "Client Payment",
-      status: "pending",
+      status: "completed",
     },
   ],
 }: HomeProps) => {
@@ -149,7 +149,7 @@ const Home = ({
             </motion.div>
 
             {/* Quick Actions */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -236,7 +236,7 @@ const Home = ({
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </motion.div> */}
           </div>
 
           {/* Account Overview */}
@@ -246,14 +246,14 @@ const Home = ({
             transition={{ delay: 0.3, duration: 0.5 }}
             className="mb-8"
           >
-            <AccountOverview
+            {/* <AccountOverview
               accountNumber={accountData.accountNumber}
               accountType={accountData.accountType}
               balance={accountData.balance}
               spendingLimit={accountData.spendingLimit}
               spendingUsed={accountData.spendingUsed}
               transactions={accountData.transactions}
-            />
+            /> */}
           </motion.div>
 
           {/* Recent Transactions */}

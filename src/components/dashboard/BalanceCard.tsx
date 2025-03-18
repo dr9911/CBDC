@@ -21,35 +21,20 @@ interface BalanceCardProps {
 
 const BalanceCard = ({
   balance = 25750.84,
-  currency = "CBDC",
-  percentChange = 2.4,
-  spendingLimit = 30000,
-  currentSpending = 18500,
+  currency = "DUAL",
+
 }: BalanceCardProps) => {
   // Calculate percentage of spending limit used
-  const spendingPercentage = (currentSpending / spendingLimit) * 100;
+  // const spendingPercentage = (currentSpending / spendingLimit) * 100;
 
   // Determine if the percentage change is positive or negative
-  const isPositiveChange = percentChange >= 0;
 
   return (
     <Card className="w-[380px] h-[220px] bg-card overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex justify-between items-center">
           <span>Total Balance</span>
-          <motion.div
-            className={`flex items-center text-sm ${isPositiveChange ? "text-green-500" : "text-red-500"}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            {isPositiveChange ? (
-              <ArrowUpRight className="mr-1" size={16} />
-            ) : (
-              <ArrowDownRight className="mr-1" size={16} />
-            )}
-            {Math.abs(percentChange)}%
-          </motion.div>
+
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -66,7 +51,7 @@ const BalanceCard = ({
           })}
         </motion.div>
 
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Spending Limit</span>
             <span>{Math.round(spendingPercentage)}% used</span>
@@ -80,7 +65,7 @@ const BalanceCard = ({
               {currency} {spendingLimit.toLocaleString()}
             </span>
           </div>
-        </div>
+        </div> */}
       </CardContent>
       <CardFooter className="flex justify-between gap-2">
         <Button variant="outline" size="sm" className="flex-1">

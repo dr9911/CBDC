@@ -51,12 +51,19 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       roles: ["user", "commercial_bank", "central_bank"],
     },
     {
-      id: "cbdc",
-      label: "DUAL Info",
+      id: "mint",
+      label: "Mint New Supply",
       icon: <Banknote size={20} />,
-      path: "/cbdc",
-      roles: ["user", "commercial_bank", "central_bank"],
+      path: "/mint",
+      roles: ["central_bank"],
     },
+    // {
+    //   id: "cbdc",
+    //   label: "DUAL Info",
+    //   icon: <Banknote size={20} />,
+    //   path: "/cbdc",
+    //   roles: ["user", "commercial_bank", "central_bank"],
+    // },
     {
       id: "history",
       label: "Transaction History",
@@ -75,34 +82,28 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
 
   // Role-specific menu items
   const roleSpecificItems = [
-    {
-      id: "accounts",
-      label: "Manage Accounts",
-      icon: <CreditCard size={20} />,
-      path: "/accounts",
-      roles: ["commercial_bank", "central_bank"],
-    },
-    {
-      id: "mint",
-      label: "Mint New Supply",
-      icon: <Banknote size={20} />,
-      path: "/mint",
-      roles: ["central_bank"],
-    },
-    {
-      id: "user-management",
-      label: "User Management",
-      icon: <Users size={20} />,
-      path: "/user-management",
-      roles: ["central_bank"],
-    },
-    {
-      id: "user-documentation",
-      label: "Documentation",
-      icon: <FileText size={20} />,
-      path: "/user-documentation",
-      roles: ["central_bank"],
-    },
+    // {
+    //   id: "accounts",
+    //   label: "Manage Accounts",
+    //   icon: <CreditCard size={20} />,
+    //   path: "/accounts",
+    //   roles: ["commercial_bank", "central_bank"],
+    // },
+  
+    // {
+    //   id: "user-management",
+    //   label: "User Management",
+    //   icon: <Users size={20} />,
+    //   path: "/user-management",
+    //   roles: ["central_bank"],
+    // },
+    // {
+    //   id: "user-documentation",
+    //   label: "Documentation",
+    //   icon: <FileText size={20} />,
+    //   path: "/user-documentation",
+    //   roles: ["central_bank"],
+    // },
   ];
 
   // Filter menu items based on user role
