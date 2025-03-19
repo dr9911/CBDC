@@ -15,6 +15,7 @@ const UserManagement = lazy(() => import("./components/auth/UserManagement"));
 const UserDocumentation = lazy(
   () => import("./components/auth/UserDocumentation"),
 );
+const HistoryPage = lazy(() => import("./components/history/HistoryPage"));
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -35,6 +36,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Home />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
               </ProtectedRoute>
             }
           />

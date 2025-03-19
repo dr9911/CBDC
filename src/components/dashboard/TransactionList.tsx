@@ -48,6 +48,7 @@ interface TransactionListProps {
   onViewTransaction?: (id: string) => void;
   onFilterChange?: (filter: string) => void;
   onSearch?: (query: string) => void;
+  showAllTransactions?: boolean;
 }
 
 const TransactionList = ({
@@ -97,6 +98,7 @@ const TransactionList = ({
   onViewTransaction = () => {},
   onFilterChange = () => {},
   onSearch = () => {},
+  showAllTransactions = false,
 }: TransactionListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -162,12 +164,16 @@ const TransactionList = ({
 
   return (
     <Card className="w-full bg-card">
-      <CardHeader>
+      <CardHeader className="p-4 sm:p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <CardTitle>Recent Transactions</CardTitle>
-            <CardDescription>
-              View and manage your transaction history
+            <CardTitle className="text-lg sm:text-xl">
+              Recent Transactions
+            </CardTitle>
+            <CardDescription className="text-sm">
+              {showAllTransactions
+                ? "All transactions"
+                : "View and manage your transaction history"}
             </CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -178,7 +184,7 @@ const TransactionList = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         {/* Filters and search */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -196,7 +202,7 @@ const TransactionList = ({
               value={statusFilter}
               onValueChange={handleStatusFilterChange}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -207,7 +213,7 @@ const TransactionList = ({
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={handleTypeFilterChange}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -223,106 +229,124 @@ const TransactionList = ({
         </div>
 
         {/* Transactions list */}
-        <div className="rounded-md border">
-          <div className="grid grid-cols-12 gap-2 p-4 bg-muted/50 text-sm font-medium text-muted-foreground">
-            <div className="col-span-3 md:col-span-2">Date</div>
-            <div className="col-span-3 md:col-span-2">Type</div>
-            <div className="col-span-3 md:col-span-2">Amount</div>
-            <div className="hidden md:block md:col-span-3">Recipient</div>
-            <div className="col-span-2 md:col-span-2">Status</div>
-            <div className="col-span-1 text-right">Actions</div>
-          </div>
+        <div className="rounded-md border overflow-x-auto">
+          <div className="min-w-[600px]">
+            <div className="grid grid-cols-12 gap-2 p-4 bg-muted/50 text-xs sm:text-sm font-medium text-muted-foreground">
+              <div className="col-span-3 md:col-span-2">Date</div>
+              <div className="col-span-3 md:col-span-2">Type</div>
+              <div className="col-span-3 md:col-span-2">Amount</div>
+              <div className="hidden md:block md:col-span-3">Recipient</div>
+              <div className="col-span-2 md:col-span-2">Status</div>
+              <div className="col-span-1 text-right">Actions</div>
+            </div>
 
-          {transactions.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              No transactions found
-            </div>
-          ) : (
-            <div className="divide-y">
-              {transactions.map((transaction) => (
-                <motion.div
-                  key={transaction.id}
-                  className="grid grid-cols-12 gap-2 p-4 items-center text-sm"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                >
-                  <div className="col-span-3 md:col-span-2 truncate">
-                    {formatDate(transaction.date)}
-                  </div>
-                  <div className="col-span-3 md:col-span-2">
-                    <Badge
-                      variant={
-                        transaction.type === "incoming"
-                          ? "default"
-                          : "secondary"
-                      }
-                      className={
-                        transaction.type === "incoming"
-                          ? "bg-green-100 text-green-800 hover:bg-green-100"
-                          : "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                      }
-                    >
-                      {transaction.type === "incoming" ? "Received" : "Sent"}
-                    </Badge>
-                  </div>
-                  <div className="col-span-3 md:col-span-2 font-medium">
-                    <span
-                      className={
-                        transaction.type === "incoming"
-                          ? "text-green-600"
-                          : "text-blue-600"
-                      }
-                    >
-                      {transaction.type === "incoming" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </span>
-                  </div>
-                  <div className="hidden md:block md:col-span-3 truncate">
-                    {transaction.recipient}
-                  </div>
-                  <div className="col-span-2 md:col-span-2">
-                    <Badge variant={getStatusBadgeVariant(transaction.status)}>
-                      {transaction.status.charAt(0).toUpperCase() +
-                        transaction.status.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="col-span-1 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => onViewTransaction(transaction.id)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Download className="mr-2 h-4 w-4" />
-                          Download Receipt
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+            {transactions.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                No transactions found
+              </div>
+            ) : (
+              <div className="divide-y min-w-[600px]">
+                {transactions.map((transaction) => (
+                  <motion.div
+                    key={transaction.id}
+                    className="grid grid-cols-12 gap-2 p-4 items-center text-xs sm:text-sm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+                  >
+                    <div className="col-span-3 md:col-span-2 truncate">
+                      {formatDate(transaction.date)}
+                    </div>
+                    <div className="col-span-3 md:col-span-2">
+                      <Badge
+                        variant={
+                          transaction.type === "incoming"
+                            ? "default"
+                            : "secondary"
+                        }
+                        className={
+                          transaction.type === "incoming"
+                            ? "bg-green-100 text-green-800 hover:bg-green-100 text-xs"
+                            : "bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs"
+                        }
+                      >
+                        {transaction.type === "incoming" ? "Received" : "Sent"}
+                      </Badge>
+                    </div>
+                    <div className="col-span-3 md:col-span-2 font-medium">
+                      <span
+                        className={
+                          transaction.type === "incoming"
+                            ? "text-green-600"
+                            : "text-blue-600"
+                        }
+                      >
+                        {transaction.type === "incoming" ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
+                      </span>
+                    </div>
+                    <div className="hidden md:block md:col-span-3 truncate">
+                      {transaction.recipient}
+                    </div>
+                    <div className="col-span-2 md:col-span-2">
+                      <Badge
+                        variant={getStatusBadgeVariant(transaction.status)}
+                        className="text-xs"
+                      >
+                        {transaction.status.charAt(0).toUpperCase() +
+                          transaction.status.slice(1)}
+                      </Badge>
+                    </div>
+                    <div className="col-span-1 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => onViewTransaction(transaction.id)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Download className="mr-2 h-4 w-4" />
+                            Download Receipt
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pagination placeholder */}
-        <div className="flex items-center justify-end space-x-2 py-4">
-          <Button variant="outline" size="sm" disabled>
-            Previous
-          </Button>
-          <Button variant="outline" size="sm">
-            Next
-          </Button>
+        <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2 py-4">
+          <div>
+            {!showAllTransactions && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => (window.location.href = "/history")}
+              >
+                View All Transactions
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" disabled>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm">
+              Next
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

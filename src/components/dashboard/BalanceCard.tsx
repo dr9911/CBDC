@@ -22,7 +22,6 @@ interface BalanceCardProps {
 const BalanceCard = ({
   balance = 25750.84,
   currency = "DUAL",
-
 }: BalanceCardProps) => {
   // Calculate percentage of spending limit used
   // const spendingPercentage = (currentSpending / spendingLimit) * 100;
@@ -30,16 +29,15 @@ const BalanceCard = ({
   // Determine if the percentage change is positive or negative
 
   return (
-    <Card className="w-[380px] h-[220px] bg-card overflow-hidden">
-      <CardHeader className="pb-2">
+    <Card className="w-full sm:w-[380px] h-auto sm:h-[220px] bg-card overflow-hidden">
+      <CardHeader className="pb-2 p-3 sm:p-6">
         <CardTitle className="text-lg flex justify-between items-center">
           <span>Total Balance</span>
-
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
         <motion.div
-          className="text-3xl font-bold mb-4"
+          className="text-2xl sm:text-3xl font-bold mb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -67,16 +65,28 @@ const BalanceCard = ({
           </div>
         </div> */}
       </CardContent>
-      <CardFooter className="flex justify-between gap-2">
-        <Button variant="outline" size="sm" className="flex-1">
+      <CardFooter className="flex flex-wrap sm:flex-nowrap justify-between gap-2 p-3 sm:p-6">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-xs sm:text-sm"
+        >
           <Plus className="mr-1" size={16} />
           Add Funds
         </Button>
-        <Button variant="outline" size="sm" className="flex-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-xs sm:text-sm"
+        >
           <Send className="mr-1" size={16} />
           Send
         </Button>
-        <Button variant="outline" size="sm" className="flex-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-xs sm:text-sm"
+        >
           <QrCode className="mr-1" size={16} />
           Receive
         </Button>

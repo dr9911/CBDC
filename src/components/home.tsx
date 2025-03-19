@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "./layout/DashboardLayout";
 import AccountOverview from "./dashboard/AccountOverview";
+import CommercialBankOverview from "./dashboard/CommercialBankOverview";
 import BalanceCard from "./dashboard/BalanceCard";
 import TransactionList from "./dashboard/TransactionList";
 import TransactionForm from "./transactions/TransactionForm";
@@ -104,6 +105,7 @@ const Home = ({
     userAvatar ||
     currentUser?.avatar ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=John`;
+  const userRole = currentUser?.role || "user";
 
   // Function to handle viewing transaction details
   const handleViewTransaction = (id: string) => {
@@ -125,21 +127,24 @@ const Home = ({
       sessionTimeRemaining={sessionTimeRemaining}
       notificationCount={notificationCount}
     >
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Main dashboard content */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+            Dashboard
+          </h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Balance Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.5 }}
+              className="w-full"
             >
               <BalanceCard
                 balance={accountData.balance}
@@ -147,96 +152,6 @@ const Home = ({
                 currentSpending={accountData.spendingUsed}
               />
             </motion.div>
-
-            {/* Quick Actions */}
-            {/* <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="col-span-2"
-            >
-              <div className="bg-card rounded-lg border border-border p-6 h-[220px]">
-                <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <button className="flex flex-col items-center justify-center p-4 bg-background rounded-lg border border-border hover:bg-muted transition-colors">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium">Add Funds</span>
-                  </button>
-                  <button className="flex flex-col items-center justify-center p-4 bg-background rounded-lg border border-border hover:bg-muted transition-colors">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium">Send Money</span>
-                  </button>
-                  <button className="flex flex-col items-center justify-center p-4 bg-background rounded-lg border border-border hover:bg-muted transition-colors">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium">Scan QR</span>
-                  </button>
-                  <button className="flex flex-col items-center justify-center p-4 bg-background rounded-lg border border-border hover:bg-muted transition-colors">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium">Analytics</span>
-                  </button>
-                </div>
-              </div>
-            </motion.div> */}
           </div>
 
           {/* Account Overview */}
@@ -244,16 +159,20 @@ const Home = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            {/* <AccountOverview
-              accountNumber={accountData.accountNumber}
-              accountType={accountData.accountType}
-              balance={accountData.balance}
-              spendingLimit={accountData.spendingLimit}
-              spendingUsed={accountData.spendingUsed}
-              transactions={accountData.transactions}
-            /> */}
+            {userRole === "commercial_bank" ? (
+              <CommercialBankOverview />
+            ) : (
+              <AccountOverview
+                accountNumber={accountData.accountNumber}
+                accountType={accountData.accountType}
+                balance={accountData.balance}
+                spendingLimit={accountData.spendingLimit}
+                spendingUsed={accountData.spendingUsed}
+                transactions={accountData.transactions}
+              />
+            )}
           </motion.div>
 
           {/* Recent Transactions */}

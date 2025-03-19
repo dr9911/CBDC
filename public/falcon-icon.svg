@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="falcon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1e40af" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#falcon-gradient)" stroke="#f8fafc" stroke-width="2" />
+  <path d="M70,30 C65,25 55,28 50,30 C45,32 35,35 30,45 C25,55 30,65 35,70 C40,75 50,75 55,70 C60,65 65,55 60,45 C55,35 45,40 40,45 C35,50 35,60 40,65" stroke="#f8fafc" stroke-width="3" fill="none" stroke-linecap="round" />
+  <circle cx="40" cy="40" r="3" fill="#f8fafc" />
+  <path d="M55,35 L75,25 M60,40 L80,35" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
+</svg>

@@ -57,13 +57,6 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       path: "/mint",
       roles: ["central_bank"],
     },
-    // {
-    //   id: "cbdc",
-    //   label: "DUAL Info",
-    //   icon: <Banknote size={20} />,
-    //   path: "/cbdc",
-    //   roles: ["user", "commercial_bank", "central_bank"],
-    // },
     {
       id: "history",
       label: "Transaction History",
@@ -89,7 +82,6 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
     //   path: "/accounts",
     //   roles: ["commercial_bank", "central_bank"],
     // },
-  
     // {
     //   id: "user-management",
     //   label: "User Management",
@@ -108,7 +100,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
 
   // Filter menu items based on user role
   const menuItems = [
-    ...baseMenuItems,
+    ...baseMenuItems.filter((item) => item.roles.includes(userRole)),
     ...roleSpecificItems.filter((item) => item.roles.includes(userRole)),
   ];
 
@@ -129,7 +121,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
   // ];
 
   return (
-    <aside className="h-full w-[280px] bg-background border-r border-border flex flex-col p-4">
+    <aside className="h-full w-[280px] bg-background border-r border-border flex flex-col p-4 overflow-y-auto">
       {/* Logo and branding */}
       <div className="flex items-center mb-8 px-2">
         <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center mr-3">

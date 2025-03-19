@@ -62,7 +62,7 @@ const Header = ({
   };
 
   return (
-    <header className="w-full h-20 px-6 bg-background border-b border-border flex items-center justify-between">
+    <header className="w-full h-20 px-4 md:px-6 bg-background border-b border-border flex items-center justify-between">
       <div className="flex-1">
         <h1 className="text-xl font-semibold">DUAL Platform</h1>
       </div>

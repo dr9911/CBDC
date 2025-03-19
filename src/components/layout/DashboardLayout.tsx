@@ -43,9 +43,11 @@ const DashboardLayout = ({
     : "Never";
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen w-full bg-background overflow-hidden">
       {/* Sidebar navigation */}
-      <Sidebar activePage={activePage} />
+      <div className="md:block">
+        <Sidebar activePage={activePage} />
+      </div>
 
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -59,7 +61,7 @@ const DashboardLayout = ({
         />
 
         {/* Main content with scrolling */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6">
           {/* If no children are provided, show a placeholder */}
           {children || (
             <div className="flex items-center justify-center h-full">
@@ -77,7 +79,7 @@ const DashboardLayout = ({
 
         {/* Footer with security information */}
         <footer className="border-t border-border p-4 text-sm text-muted-foreground">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-2">
             <div>© 2025 DUAL Platform. All rights reserved.</div>
             <div className="flex items-center space-x-4">
               <span>Last Login: {lastLoginTime}</span>
