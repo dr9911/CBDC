@@ -21,7 +21,7 @@ interface BalanceCardProps {
 
 const BalanceCard = ({
   balance = 25750.84,
-  currency = "DUAL",
+  currency = "CBDC",
 }: BalanceCardProps) => {
   // Calculate percentage of spending limit used
   // const spendingPercentage = (currentSpending / spendingLimit) * 100;
@@ -48,22 +48,6 @@ const BalanceCard = ({
             maximumFractionDigits: 2,
           })}
         </motion.div>
-
-        {/* <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Spending Limit</span>
-            <span>{Math.round(spendingPercentage)}% used</span>
-          </div>
-          <Progress value={spendingPercentage} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>
-              {currency} {currentSpending.toLocaleString()}
-            </span>
-            <span>
-              {currency} {spendingLimit.toLocaleString()}
-            </span>
-          </div>
-        </div> */}
       </CardContent>
       <CardFooter className="flex flex-wrap sm:flex-nowrap justify-between gap-2 p-3 sm:p-6">
         <Button

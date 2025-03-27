@@ -45,7 +45,7 @@ const Home = ({
   sessionTimeRemaining,
   notificationCount = 3,
   accountData = {
-    accountNumber: "DUAL-1234-5678-9012",
+    accountNumber: "CBDC-1234-5678-9012",
     accountType: "Digital Currency Account",
     balance: 25750.85,
     spendingLimit: 30000,

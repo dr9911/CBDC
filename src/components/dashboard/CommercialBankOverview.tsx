@@ -30,7 +30,7 @@ interface CommercialBankOverviewProps {
 
 const CommercialBankOverview = ({
   bankName = "First Commercial Bank",
-  accountNumber = "DUAL-COMM-5678-9012",
+  accountNumber = "CBDC-COMM-5678-9012",
   balance = 10750000.85,
   currency = "$",
   clientCount = 1250,

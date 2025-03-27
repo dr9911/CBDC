@@ -1,25 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Banknote,
-  Shield,
-  AlertTriangle,
-  Check,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  BarChart3,
-  Users,
-  Building,
-  ArrowRight,
-  RefreshCw,
-  FileText,
-  Download,
-  Key,
-  Lock,
-  CheckCircle2,
-} from "lucide-react";
+import { Banknote, Calendar, Check, Shield, X } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -31,9 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import DashboardLayout from "../layout/DashboardLayout";
 import {
   Select,
   SelectContent,
@@ -48,193 +27,151 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Textarea } from "@/components/ui/textarea";
-import DashboardLayout from "../layout/DashboardLayout";
+import { Progress } from "@/components/ui/progress";
 
 interface MintNewSupplyProps {
-  userName?: string;
-  userRole?: string;
   totalSupply?: number;
-  circulatingSupply?: number;
-  mintingLimits?: {
-    daily: number;
-    monthly: number;
-    dailyUsed: number;
-    monthlyUsed: number;
-  };
 }
 
-const MintNewSupply = ({
-  userName = "Central Bank Admin",
-  userRole = "Chief Monetary Officer",
-  totalSupply = 10000000,
-  circulatingSupply = 7500000,
-  mintingLimits = {
-    daily: 500000,
-    monthly: 5000000,
-    dailyUsed: 150000,
-    monthlyUsed: 2500000,
-  },
-}: MintNewSupplyProps) => {
-  const [mintAmount, setMintAmount] = useState<string>("");
-  const [mintPurpose, setMintPurpose] = useState<string>("");
-  const [mintJustification, setMintJustification] = useState<string>("");
-  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
-  const [showMfaDialog, setShowMfaDialog] = useState<boolean>(false);
+const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
+  const [name, setName] = useState<string>("");
+  const [currency, setCurrency] = useState<string>("");
+  const [numTokens, setNumTokens] = useState<string>("");
+  const [issuingPrice, setIssuingPrice] = useState<string>("");
+  const [purpose, setPurpose] = useState<string>("");
+  const [documentDate, setDocumentDate] = useState<string>("27.02.2025");
+
+  // Dialog states
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showMfaDialog, setShowMfaDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [mfaCode, setMfaCode] = useState<string>("");
-  const [step, setStep] = useState<number>(1);
-  const [supply, setSupply] = useState<number>(totalSupply);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [verificationStep, setVerificationStep] = useState(1);
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("$", "");
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
   };
 
-  const handleMintAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, "");
-    setMintAmount(value);
+  const handleCurrencyChange = (value: string) => {
+    setCurrency(value);
   };
 
-  const handleMintPurposeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMintPurpose(e.target.value);
+  const handleNumTokensChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9.]/g, "");
+    setNumTokens(value);
   };
 
-  const handleMintJustificationChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>,
-  ) => {
-    setMintJustification(e.target.value);
+  const handleIssuingPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9.]/g, "");
+    setIssuingPrice(value);
+  };
+
+  const handlePurposeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPurpose(e.target.value);
+  };
+
+  const handleDocumentDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDocumentDate(e.target.value);
   };
 
   const handleMfaCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, "");
+    // Only allow numbers and limit to 6 digits
+    const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
     setMfaCode(value);
   };
 
-  const handleNextStep = () => {
-    if (step === 1) {
-      setShowConfirmDialog(true);
-    }
+  const handleSubmit = () => {
+    // Open confirmation dialog
+    setShowConfirmDialog(true);
   };
 
-  const handleConfirmMinting = async () => {
+  const handleConfirmMinting = () => {
+    // Close confirmation dialog and open MFA dialog
     setShowConfirmDialog(false);
     setShowMfaDialog(true);
-    setTimeout(() => {
-      setSupply(prevSupply => prevSupply + parseInt(mintAmount, 10));
-    }, 60000);  
-
   };
-  
 
   const handleVerifyMfa = () => {
-    // In a real app, this would verify the MFA code with the backend
+    // Close MFA dialog and show processing
     setShowMfaDialog(false);
-    setShowSuccessDialog(true);
+    setIsProcessing(true);
 
-    // Reset form
-    setMintAmount("");
-    setMintPurpose("");
-    setMintJustification("");
-    setMfaCode("");
-    setStep(1);
+    // Simulate processing with progress bar
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += 5;
+      setProgress(currentProgress);
+
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setIsProcessing(false);
+        setShowSuccessDialog(true);
+      }
+    }, 150);
   };
 
   const handleCloseSuccess = () => {
+    // Reset everything
     setShowSuccessDialog(false);
+    setName("");
+    setCurrency("");
+    setNumTokens("");
+    setIssuingPrice("");
+    setPurpose("");
+    setDocumentDate("27.02.2025");
+    setMfaCode("");
+    setProgress(0);
+    setVerificationStep(1);
   };
 
-  const isFormValid = mintAmount && mintPurpose && mintJustification;
+  const handleNextStep = () => {
+    if (verificationStep < 3) {
+      setVerificationStep(verificationStep + 1);
+    } else {
+      handleVerifyMfa();
+    }
+  };
+
+  const isFormValid =
+    name && currency && numTokens && issuingPrice && purpose && documentDate;
+
   const isMfaValid = mfaCode.length === 6;
-  const mintAmountValue = parseInt(mintAmount) || 0;
-  const isOverLimit =
-    mintAmountValue > mintingLimits.daily - mintingLimits.dailyUsed;
 
   return (
     <DashboardLayout activePage="mint">
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Mint New DUAL Supply</h1>
-            <p className="text-muted-foreground mt-1">
-              Create new digital currency with secure multi-factor
-              authentication
+        <div>
+          <h1 className="text-3xl font-bold">Mint New CBDC Supply</h1>
+          <p className="text-muted-foreground mt-1">
+            Create new digital currency with secure multi-factor authentication
+          </p>
+        </div>
+
+        {/* Total Supply Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total CBDC Supply
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end justify-between">
+              <div className="text-2xl font-bold">
+                {totalSupply.toLocaleString()} CBDC
+              </div>
+              <Banknote className="h-5 w-5 text-blue-500" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Authorized by Central Bank
             </p>
-          </div>
-        </div>
-
-        {/* Key Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Card className="bg-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total DUAL Supply
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between">
-                <div className="text-2xl font-bold">
-                  {formatCurrency(supply)} DUAL
-                </div>
-                <Banknote className="h-5 w-5 text-blue-500" />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Authorized by Central Bank
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* <Card className="bg-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Circulating Supply
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between">
-                <div className="text-2xl font-bold">
-                  {formatCurrency(circulatingSupply)} DUAL
-                </div>
-                <RefreshCw className="h-5 w-5 text-green-500" />
-              </div>
-              <div className="mt-2">
-                <div className="flex justify-between text-xs mb-1">
-                  <span>
-                    {Math.round((circulatingSupply / totalSupply) * 100)}% of
-                    total supply
-                  </span>
-                </div>
-                <Progress
-                  value={(circulatingSupply / totalSupply) * 100}
-                  className="h-1"
-                />
-              </div>
-            </CardContent>
-          </Card> */}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Minting Form */}
-        <Card className="bg-card">
+        <Card>
           <CardHeader>
             <CardTitle>Mint New Digital Currency</CardTitle>
             <CardDescription>
@@ -242,315 +179,416 @@ const MintNewSupply = ({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="mint-amount">Minting Amount</Label>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={handleNameChange}
+                    placeholder="Eco-System Test Batch 1"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select value={currency} onValueChange={handleCurrencyChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="PGK - Papua New Guinean Kina" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pgk">
+                        PGK - Papua New Guinean Kina
+                      </SelectItem>
+                      <SelectItem value="usd">
+                        USD - United States Dollar
+                      </SelectItem>
+                      <SelectItem value="eur">EUR - Euro</SelectItem>
+                      <SelectItem value="gbp">GBP - British Pound</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="num-tokens">Number of tokens</Label>
+                  <Input
+                    id="num-tokens"
+                    value={numTokens}
+                    onChange={handleNumTokensChange}
+                    placeholder="1,000,000"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="issuing-price">Issuing price</Label>
                   <div className="flex gap-2">
-                    <span className="text-muted-foreground flex items-center px-3 border rounded-l-md border-r-0">
-                      CBDC
-                    </span>
+                    <Select defaultValue="pgk" className="w-[180px]">
+                      <SelectTrigger>
+                        <SelectValue placeholder="PGK - Papua New" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pgk">PGK - Papua New</SelectItem>
+                        <SelectItem value="usd">USD - US Dollar</SelectItem>
+                        <SelectItem value="eur">EUR - Euro</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Input
-                      id="mint-amount"
-                      value={mintAmount}
-                      onChange={handleMintAmountChange}
-                      placeholder="Enter amount to mint"
-                      className="flex-1 rounded-l-none"
+                      id="issuing-price"
+                      value={issuingPrice}
+                      onChange={handleIssuingPriceChange}
+                      placeholder="1.00"
+                      className="flex-1 min-w-[200px]"
                     />
                   </div>
-                  {isOverLimit && (
-                    <p className="text-sm text-destructive">
-                      Amount exceeds daily minting limit. Maximum available:{" "}
-                      {formatCurrency(
-                        mintingLimits.daily - mintingLimits.dailyUsed,
-                      )}{" "}
-                      CBDC
-                    </p>
-                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="mint-purpose">Purpose</Label>
-                  <Input
-                    id="mint-purpose"
-                    value={mintPurpose}
-                    onChange={handleMintPurposeChange}
-                    placeholder="E.g., Quarterly allocation, Emergency liquidity"
-                  />
-                </div>
+                <div className="mt-6">
+                  <h3 className="text-md font-medium mb-4">Properties</h3>
 
-                <div className="space-y-2">
-                  <Label htmlFor="mint-justification">
-                    Detailed Justification
-                  </Label>
-                  <Textarea
-                    id="mint-justification"
-                    value={mintJustification}
-                    onChange={handleMintJustificationChange}
-                    placeholder="Provide detailed reasoning for this minting operation"
-                    className="min-h-[120px]"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="purpose">Purpose</Label>
+                    <Input
+                      id="purpose"
+                      value={purpose}
+                      onChange={handlePurposeChange}
+                      placeholder="Enter purpose"
+                    />
+                  </div>
+
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="document-date">Document date</Label>
+                    <div className="relative">
+                      <Input
+                        id="document-date"
+                        type="text"
+                        value={documentDate}
+                        onChange={handleDocumentDateChange}
+                        placeholder="27.02.2025"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3"
+                        type="button"
+                      >
+                        <Calendar className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* <div className="space-y-4">
-                <div className="bg-muted/30 p-4 rounded-lg border border-border">
-                  <h3 className="font-medium mb-3 flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-primary" />
-                    Security Requirements
-                  </h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-500 mt-1 shrink-0" />
-                      <span>
-                        Multi-signature approval required (3 authorized
-                        officers)
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-500 mt-1 shrink-0" />
-                      <span>Two-factor authentication verification</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-500 mt-1 shrink-0" />
-                      <span>Detailed audit log of all minting operations</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-500 mt-1 shrink-0" />
-                      <span>Compliance with monetary policy guidelines</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
-                  <h3 className="font-medium mb-3 flex items-center gap-2 text-amber-800">
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    Important Notice
-                  </h3>
-                  <p className="text-sm text-amber-700">
-                    Minting new CBDC directly affects the monetary supply. All
-                    operations are permanently recorded on the blockchain and
-                    cannot be reversed. Please ensure all information is
-                    accurate before proceeding.
-                  </p>
-                </div>
-
-                <div className="bg-muted/30 p-4 rounded-lg border border-border">
-                  <h3 className="font-medium mb-3">Approval Process</h3>
-                  <ol className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <span className="bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs shrink-0">
-                        1
-                      </span>
-                      <span>Submit minting request with required details</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs shrink-0">
-                        2
-                      </span>
-                      <span>
-                        Verify identity with two-factor authentication
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs shrink-0">
-                        3
-                      </span>
-                      <span>Await approval from other authorized officers</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs shrink-0">
-                        4
-                      </span>
-                      <span>
-                        Minting operation executed after all approvals
-                      </span>
-                    </li>
-                  </ol>
-                </div>
-              </div> */}
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2 border-t pt-4">
             <Button variant="outline">Cancel</Button>
-            <Button
-              onClick={handleNextStep}
-              disabled={!isFormValid || isOverLimit}
-            >
+            <Button onClick={handleSubmit} disabled={!isFormValid}>
               Proceed to Verification
             </Button>
           </CardFooter>
         </Card>
+      </div>
 
-        {/* Confirmation Dialog */}
-        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Confirm Minting Operation</DialogTitle>
-              <DialogDescription>
-                Please review the details of this minting operation before
-                proceeding.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="bg-muted p-4 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Amount:</span>
-                  <span className="font-medium">
-                    {formatCurrency(parseInt(mintAmount))} CBDC
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Purpose:</span>
-                  <span className="font-medium">{mintPurpose}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Requested by:</span>
-                  <span className="font-medium">{userName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Role:</span>
-                  <span className="font-medium">{userRole}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date:</span>
-                  <span className="font-medium">
-                    {new Date().toLocaleString()}
-                  </span>
-                </div>
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Minting Request</DialogTitle>
+            <DialogDescription>
+              Please review the details of your minting request before
+              proceeding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Name
+                </p>
+                <p className="text-sm">{name}</p>
               </div>
-              <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-amber-800 font-medium">
-                      This action requires additional verification
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      You will need to complete two-factor authentication to
-                      proceed.
-                    </p>
-                  </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Currency
+                </p>
+                <p className="text-sm">{currency.toUpperCase()}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Number of Tokens
+                </p>
+                <p className="text-sm">{Number(numTokens).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Issuing Price
+                </p>
+                <p className="text-sm">
+                  {currency.toUpperCase()} {Number(issuingPrice).toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Purpose
+                </p>
+                <p className="text-sm">{purpose}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Document Date
+                </p>
+                <p className="text-sm">{documentDate}</p>
+              </div>
+            </div>
+            <div className="bg-muted p-3 rounded-md">
+              <p className="text-sm text-muted-foreground">
+                By proceeding, you confirm that you are authorized to mint new
+                CBDC tokens and that all information provided is accurate.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmMinting}>Confirm & Proceed</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MFA Verification Dialog */}
+      <Dialog open={showMfaDialog} onOpenChange={setShowMfaDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Multi-Factor Authentication</DialogTitle>
+            <DialogDescription>
+              Please complete the verification process to authorize this minting
+              request.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${verificationStep >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                >
+                  {verificationStep > 1 ? <Check className="h-4 w-4" /> : "1"}
+                </div>
+                <div className="h-0.5 w-8 bg-muted"></div>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${verificationStep >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                >
+                  {verificationStep > 2 ? <Check className="h-4 w-4" /> : "2"}
+                </div>
+                <div className="h-0.5 w-8 bg-muted"></div>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${verificationStep >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                >
+                  3
                 </div>
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowConfirmDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleConfirmMinting}>
-                Proceed to Authentication
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
-        {/* MFA Dialog */}
-        <Dialog open={showMfaDialog} onOpenChange={setShowMfaDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Two-Factor Authentication</DialogTitle>
-              <DialogDescription>
-                Enter the 6-digit code from your authenticator app to verify
-                your identity.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="flex flex-col items-center justify-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Key className="h-8 w-8 text-primary" />
+            {verificationStep === 1 && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Shield className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Biometric Verification</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Use your fingerprint or face ID to verify your identity
+                    </p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    A secure 6-digit code has been sent to your authenticator
-                    app
-                  </p>
+                <div className="bg-muted p-4 rounded-md flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-sm font-medium mb-2">
+                      Touch ID Verification
+                    </p>
+                    <div className="w-16 h-16 mx-auto border-2 border-primary rounded-full flex items-center justify-center">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full"></div>
+                    </div>
+                  </div>
                 </div>
-                <div className="w-full max-w-[200px]">
+              </div>
+            )}
+
+            {verificationStep === 2 && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Shield className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Hardware Key Verification</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Insert your hardware security key to continue
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-muted p-4 rounded-md flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-sm font-medium mb-2">
+                      Insert Security Key
+                    </p>
+                    <div className="w-16 h-8 mx-auto border-2 border-primary rounded-md flex items-center justify-center">
+                      <div className="w-12 h-4 bg-primary/10 rounded-sm"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {verificationStep === 3 && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Shield className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Authentication Code</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Enter the 6-digit code from your authenticator app
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mfa-code">Authentication Code</Label>
                   <Input
+                    id="mfa-code"
                     value={mfaCode}
                     onChange={handleMfaCodeChange}
-                    maxLength={6}
                     placeholder="000000"
-                    className="text-center text-xl tracking-widest"
+                    maxLength={6}
+                    className="text-center text-lg tracking-widest"
                   />
                 </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowMfaDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleVerifyMfa} disabled={!isMfaValid}>
-                Verify & Submit
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            )}
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowMfaDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleNextStep}
+              disabled={verificationStep === 3 && !isMfaValid}
+            >
+              {verificationStep < 3 ? "Next" : "Verify"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Success Dialog */}
-        <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Minting Request Submitted</DialogTitle>
-              <DialogDescription>
-                Your request to mint new CBDC has been successfully submitted.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="flex flex-col items-center justify-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
-                </div>
-                <div className="text-center">
-                  <h3 className="font-medium text-lg">
-                    Request ID: MINT-
+      {/* Processing Dialog */}
+      <Dialog open={isProcessing} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Processing Minting Request</DialogTitle>
+            <DialogDescription>
+              Please wait while we process your minting request.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Progress value={progress} className="w-full" />
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Verifying authorization</span>
+                <span>{progress >= 30 ? "Complete" : "In progress..."}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Creating tokens</span>
+                <span>
+                  {progress >= 60
+                    ? "Complete"
+                    : progress >= 30
+                      ? "In progress..."
+                      : "Pending"}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Recording transaction</span>
+                <span>
+                  {progress >= 90
+                    ? "Complete"
+                    : progress >= 60
+                      ? "In progress..."
+                      : "Pending"}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Finalizing</span>
+                <span>
+                  {progress >= 100
+                    ? "Complete"
+                    : progress >= 90
+                      ? "In progress..."
+                      : "Pending"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Minting Successful</DialogTitle>
+            <DialogDescription>
+              Your minting request has been successfully processed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <Check className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-medium">Transaction Complete</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {Number(numTokens).toLocaleString()} CBDC tokens have been
+                minted successfully.
+              </p>
+            </div>
+            <div className="bg-muted p-4 rounded-md">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="font-medium">Transaction ID</p>
+                  <p className="text-muted-foreground">
+                    TXN-
                     {Math.floor(Math.random() * 1000000)
                       .toString()
                       .padStart(6, "0")}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Submitted on {new Date().toLocaleString()}
                   </p>
                 </div>
-                <div className="bg-muted p-4 rounded-lg w-full space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Status:</span>
-                    <Badge
-                      variant="outline"
-                      className="bg-amber-100 text-amber-800 hover:bg-amber-100"
-                    >
-                      Awaiting Approvals (1/3)
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount:</span>
-                    <span className="font-medium">
-                      {formatCurrency(parseInt(mintAmount) || 0)} CBDC
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Estimated completion:
-                    </span>
-                    <span className="font-medium">Within 24 hours</span>
-                  </div>
+                <div>
+                  <p className="font-medium">Date & Time</p>
+                  <p className="text-muted-foreground">
+                    {new Date().toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  You will receive a notification when all approvals are
-                  complete and the minting operation is executed.
-                </p>
+                <div>
+                  <p className="font-medium">Status</p>
+                  <p className="text-green-600">Completed</p>
+                </div>
+                <div>
+                  <p className="font-medium">Authorized By</p>
+                  <p className="text-muted-foreground">
+                    Central Bank Authority
+                  </p>
+                </div>
               </div>
             </div>
-            <DialogFooter>
-              <Button onClick={handleCloseSuccess}>Close</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleCloseSuccess} className="w-full">
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

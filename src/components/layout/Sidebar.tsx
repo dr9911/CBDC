@@ -74,29 +74,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
   ];
 
   // Role-specific menu items
-  const roleSpecificItems = [
-    // {
-    //   id: "accounts",
-    //   label: "Manage Accounts",
-    //   icon: <CreditCard size={20} />,
-    //   path: "/accounts",
-    //   roles: ["commercial_bank", "central_bank"],
-    // },
-    // {
-    //   id: "user-management",
-    //   label: "User Management",
-    //   icon: <Users size={20} />,
-    //   path: "/user-management",
-    //   roles: ["central_bank"],
-    // },
-    // {
-    //   id: "user-documentation",
-    //   label: "Documentation",
-    //   icon: <FileText size={20} />,
-    //   path: "/user-documentation",
-    //   roles: ["central_bank"],
-    // },
-  ];
+  const roleSpecificItems = [];
 
   // Filter menu items based on user role
   const menuItems = [
@@ -105,20 +83,6 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
   ];
 
   // Support and security items
-  // const supportItems = [
-  //   {
-  //     id: "help",
-  //     label: "Help & Support",
-  //     icon: <HelpCircle size={20} />,
-  //     path: "/help",
-  //   },
-  //   {
-  //     id: "security",
-  //     label: "Security Center",
-  //     icon: <Shield size={20} />,
-  //     path: "/security",
-  //   },
-  // ];
 
   return (
     <aside className="h-full w-[280px] bg-background border-r border-border flex flex-col p-4 overflow-y-auto">
@@ -128,32 +92,12 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
           <CreditCard className="text-primary-foreground" size={20} />
         </div>
         <div>
-          <h1 className="font-bold text-xl">DUAL Platform</h1>
-          <p className="text-xs text-muted-foreground">
-            Digital Currency Dashboard
-          </p>
+          <h1 className="font-bold text-xl">TND Platform</h1>
+          <p className="text-xs text-muted-foreground">CBDC Dashboard</p>
         </div>
       </div>
 
       {/* Security status indicator */}
-      {/* <div className="mb-6 bg-muted rounded-lg p-3">
-        <div className="flex items-center">
-          <Shield className="text-green-500 mr-2" size={18} />
-          <span className="text-sm font-medium">Secure Connection</span>
-          <Badge variant="secondary" className="ml-auto text-xs">
-            Active
-          </Badge>
-        </div>
-        <div className="mt-2 flex items-center">
-          <AlertTriangle className="text-amber-500 mr-2" size={18} />
-          <span
-            className="text-xs text-muted-foreground cursor-pointer hover:text-foreground"
-            onClick={refreshSession}
-          >
-            Session expires in {sessionTimeRemaining} min
-          </span>
-        </div>
-      </div> */}
 
       {/* User role indicator */}
       <div className="mb-4 px-2">
@@ -191,26 +135,6 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       <Separator className="my-4" />
 
       {/* Support and security section */}
-      {/* <div className="space-y-1 mb-6">
-        {supportItems.map((item) => (
-          <TooltipProvider key={item.id}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link to={item.path}>
-                  <Button
-                    variant={activePage === item.id ? "secondary" : "ghost"}
-                    className={`w-full justify-start ${activePage === item.id ? "font-medium" : ""}`}
-                  >
-                    <span className="mr-3">{item.icon}</span>
-                    {item.label}
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.label}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ))}
-      </div> */}
 
       {/* Spacer to push logout to bottom */}
       <div className="flex-grow" />

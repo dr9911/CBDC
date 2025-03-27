@@ -44,8 +44,8 @@ const DashboardLayout = ({
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-background overflow-hidden">
-      {/* Sidebar navigation */}
-      <div className="md:block">
+      {/* Sidebar navigation - desktop only */}
+      <div className="hidden md:block">
         <Sidebar activePage={activePage} />
       </div>
 
@@ -58,6 +58,7 @@ const DashboardLayout = ({
           isAuthenticated={isAuthenticated}
           sessionTimeRemaining={sessionTimeRemaining}
           notificationCount={notificationCount}
+          activePage={activePage}
         />
 
         {/* Main content with scrolling */}
@@ -67,7 +68,7 @@ const DashboardLayout = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <h2 className="text-2xl font-semibold mb-2">
-                  Welcome to DUAL Platform
+                  Welcome to TND Platform
                 </h2>
                 <p className="text-muted-foreground">
                   Select an option from the sidebar to get started
@@ -80,7 +81,7 @@ const DashboardLayout = ({
         {/* Footer with security information */}
         <footer className="border-t border-border p-4 text-sm text-muted-foreground">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2">
-            <div>© 2025 DUAL Platform. All rights reserved.</div>
+            <div>© 2025 TND Platform. All rights reserved.</div>
             <div className="flex items-center space-x-4">
               <span>Last Login: {lastLoginTime}</span>
             </div>

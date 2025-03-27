@@ -107,8 +107,9 @@ const TransactionList = ({
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    onSearch(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
+    onSearch(value);
   };
 
   // Handle status filter change
@@ -161,6 +162,43 @@ const TransactionList = ({
         return "outline";
     }
   };
+
+  // Filter transactions based on search query and filters
+  const filteredTransactions = transactions.filter((transaction) => {
+    // Apply search filter
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const recipientMatch = transaction.recipient
+        .toLowerCase()
+        .includes(searchLower);
+      const referenceMatch =
+        transaction.reference?.toLowerCase().includes(searchLower) || false;
+      const idMatch = transaction.id.toLowerCase().includes(searchLower);
+
+      if (!(recipientMatch || referenceMatch || idMatch)) {
+        return false;
+      }
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all" && transaction.status !== statusFilter) {
+      return false;
+    }
+
+    // Apply type filter
+    if (typeFilter !== "all" && transaction.type !== typeFilter) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Sort transactions
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+  });
 
   return (
     <Card className="w-full bg-card">
@@ -230,7 +268,7 @@ const TransactionList = ({
 
         {/* Transactions list */}
         <div className="rounded-md border overflow-x-auto">
-          <div className="min-w-[600px]">
+          <div className="min-w-[600px] lg:min-w-0">
             <div className="grid grid-cols-12 gap-2 p-4 bg-muted/50 text-xs sm:text-sm font-medium text-muted-foreground">
               <div className="col-span-3 md:col-span-2">Date</div>
               <div className="col-span-3 md:col-span-2">Type</div>
@@ -240,13 +278,15 @@ const TransactionList = ({
               <div className="col-span-1 text-right">Actions</div>
             </div>
 
-            {transactions.length === 0 ? (
+            {sortedTransactions.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
-                No transactions found
+                {searchQuery
+                  ? `No transactions found for "${searchQuery}"`
+                  : "No transactions found"}
               </div>
             ) : (
-              <div className="divide-y min-w-[600px]">
-                {transactions.map((transaction) => (
+              <div className="divide-y min-w-[600px] lg:min-w-0">
+                {sortedTransactions.map((transaction) => (
                   <motion.div
                     key={transaction.id}
                     className="grid grid-cols-12 gap-2 p-4 items-center text-xs sm:text-sm"

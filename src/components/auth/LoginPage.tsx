@@ -79,9 +79,9 @@ const LoginPage = () => {
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">DUAL Platform</CardTitle>
+          <CardTitle className="text-2xl font-bold">TND Platform</CardTitle>
           <CardDescription>
-            Sign in to access the Digital Currency Dashboard
+            Sign in to access the CBDC Dashboard
           </CardDescription>
         </CardHeader>
 
@@ -156,7 +156,7 @@ const LoginPage = () => {
             </p>
           </div>
           <div className="text-center w-full">
-            <p>© 2025 DUAL Platform. All rights reserved.</p>
+            <p>© 2025 TND Platform. All rights reserved.</p>
           </div>
         </CardFooter>
       </Card>

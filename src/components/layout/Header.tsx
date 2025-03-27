@@ -1,10 +1,12 @@
-import React from "react";
-import { Bell, Settings, User, Shield } from "lucide-react";
+import React, { useState } from "react";
+import { Bell, Settings, User, Shield, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { Input } from "@/components/ui/input";
+import MobileMenu from "./MobileMenu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,7 @@ interface HeaderProps {
   isAuthenticated?: boolean;
   sessionTimeRemaining?: number;
   notificationCount?: number;
+  activePage?: string;
 }
 
 const Header = ({
@@ -28,6 +31,7 @@ const Header = ({
   isAuthenticated: propIsAuthenticated,
   sessionTimeRemaining: propSessionTimeRemaining,
   notificationCount = 3,
+  activePage,
 }: HeaderProps) => {
   const {
     isAuthenticated,
@@ -37,6 +41,7 @@ const Header = ({
     refreshSession,
   } = useAuth();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Use props if provided, otherwise use context values
   const effectiveIsAuthenticated =
@@ -61,13 +66,67 @@ const Header = ({
     refreshSession();
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to search results page or filter current page
+      console.log(`Searching for: ${searchQuery}`);
+      // Example: navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <header className="w-full h-20 px-4 md:px-6 bg-background border-b border-border flex items-center justify-between">
-      <div className="flex-1">
-        <h1 className="text-xl font-semibold">DUAL Platform</h1>
+      <div className="flex-1 flex items-center">
+        <MobileMenu activePage={activePage} />
+        <h1 className="text-xl font-semibold">TND Platform</h1>
       </div>
 
+      {/* Search bar - visible on larger screens */}
+      <form
+        onSubmit={handleSearch}
+        className="hidden md:flex max-w-md flex-1 mx-4"
+      >
+        <div className="relative w-full">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search..."
+            className="pl-8 w-full"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </div>
+      </form>
+
       <div className="flex items-center space-x-4">
+        {/* Search button - visible on mobile */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild className="md:hidden">
+            <Button variant="ghost" size="icon">
+              <Search className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[300px] p-3">
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="flex-1"
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+              <Button type="submit" size="sm">
+                Search
+              </Button>
+            </form>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Authentication Status Indicator */}
         <div className="flex items-center">
           <Badge
@@ -128,7 +187,7 @@ const Header = ({
                 <div className="flex flex-col space-y-1">
                   <p className="font-medium">Transaction Completed</p>
                   <p className="text-xs text-muted-foreground">
-                    Your transfer of 250 DUAL was successful
+                    Your transfer of 250 CBDC was successful
                   </p>
                   <p className="text-xs text-muted-foreground">
                     10 minutes ago
