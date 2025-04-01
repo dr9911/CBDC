@@ -325,16 +325,7 @@ const TransactionList = ({
                       </div>
                       {/* Direction */}
                       <div className="col-span-2 md:col-span-2">
-                        <Badge
-                          variant={
-                            direction === "incoming" ? "default" : direction === 'outgoing' ? "secondary" : "outline" // Adjusted to valid variants
-                          }
-                          className="text-xs capitalize"
-                        >
-                          {/* Display more specific type or just direction */}
-                          {direction}
-                          {/* Or: {transaction.type.replace('_', ' ')} */}
-                        </Badge>
+                      
                       </div>
                       {/* Amount */}
                       <div className="col-span-3 md:col-span-3 font-medium text-right">
