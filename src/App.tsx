@@ -5,6 +5,7 @@ import LoginPage from "./components/auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import routes from "tempo-routes";
+import userData from "@/data/users.json";
 
 // Lazy load components
 const CBDCDashboard = lazy(() => import("./components/cbdc/CBDCDashboard"));
@@ -19,6 +20,7 @@ const HistoryPage = lazy(() => import("./components/history/HistoryPage"));
 
 function App() {
   const { isAuthenticated } = useAuth();
+  localStorage.setItem("users", JSON.stringify(userData));
 
   return (
     <Suspense fallback={<p>Loading...</p>}>
