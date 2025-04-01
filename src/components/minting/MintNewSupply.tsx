@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "../layout/DashboardLayout";
+import usersData from "@/data/users.json";
 
 interface MintNewSupplyProps {
   totalSupply?: number;
@@ -45,12 +46,16 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
   // ----------------------------------------------------------------
   // 1) FORM STATES AND HANDLERS (FROM THE NEW SNIPPET)
   // ----------------------------------------------------------------
+  const userData = usersData.find(
+    (user) => user.id === "system"
+  );
   const [name, setName] = useState<string>("");
   const [currency, setCurrency] = useState<string>("");
   const [numTokens, setNumTokens] = useState<string>("");
   const [issuingPrice, setIssuingPrice] = useState<string>("");
   const [purpose, setPurpose] = useState<string>("");
   const [documentDate, setDocumentDate] = useState<string>("27.02.2025");
+  const [supply, setSupply] = useState<number>(userData?.totalMinted || 0);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
@@ -96,6 +101,9 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
   const handleConfirmMinting = () => {
     setShowConfirmDialog(false);
     setShowMfaDialog(true);
+    setTimeout(() => {
+      setSupply(prevSupply => prevSupply + parseInt(numTokens, 10));
+    }, 60000);  
   };
 
   // Once MFA verifies => show success
@@ -138,9 +146,9 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         {/* Page Heading */}
         <div>
           <h1 className="text-3xl font-bold">Mint New CBDC Supply</h1>
-          <p className="text-muted-foreground mt-1">
+          {/* <p className="text-muted-foreground mt-1">
             Create new digital currency with secure multi-factor authentication
-          </p>
+          </p> */}
         </div>
 
         {/* Card: Total Supply */}
@@ -153,7 +161,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
           <CardContent>
             <div className="flex items-end justify-between">
               <div className="text-2xl font-bold">
-                {totalSupply.toLocaleString()} CBDC
+                {supply.toLocaleString()} CBDC
               </div>
               <Banknote className="h-5 w-5 text-blue-500" />
             </div>
@@ -214,8 +222,8 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
 
               <div className="space-y-2">
                 <Label htmlFor="issuing-price">Issuing price</Label>
-                <div className="flex gap-2">
-                  <Select defaultValue="pgk" className="w-[180px]">
+                <div className="flex gap-2 w-[180px]">
+                  <Select defaultValue="pgk">
                     <SelectTrigger>
                       <SelectValue placeholder="PGK" />
                     </SelectTrigger>

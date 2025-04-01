@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "./layout/DashboardLayout";
 import AccountOverview from "./dashboard/AccountOverview";
@@ -9,6 +9,8 @@ import TransactionForm from "./transactions/TransactionForm";
 import QRCodeScanner from "./transactions/QRCodeScanner";
 import QRCodeGenerator from "./transactions/QRCodeGenerator";
 import { useAuth } from "@/context/AuthContext";
+import usersData from "@/data/users.json";
+import transactions from "@/data/transactions.json";
 
 interface HomeProps {
   userName?: string;
@@ -16,17 +18,6 @@ interface HomeProps {
   isAuthenticated?: boolean;
   sessionTimeRemaining?: number;
   notificationCount?: number;
-  accountData?: {
-    accountNumber: string;
-    accountType: string;
-    balance: number;
-    spendingLimit: number;
-    spendingUsed: number;
-    transactions: {
-      incoming: number;
-      outgoing: number;
-    };
-  };
   recentTransactions?: Array<{
     id: string;
     date: string;
@@ -44,17 +35,6 @@ const Home = ({
   isAuthenticated,
   sessionTimeRemaining,
   notificationCount = 3,
-  accountData = {
-    accountNumber: "CBDC-1234-5678-9012",
-    accountType: "Digital Currency Account",
-    balance: 25750.85,
-    spendingLimit: 30000,
-    spendingUsed: 18500,
-    transactions: {
-      incoming: 12500,
-      outgoing: 8750,
-    },
-  },
   recentTransactions = [
     {
       id: "tx-001",
@@ -100,6 +80,21 @@ const Home = ({
   ],
 }: HomeProps) => {
   const { currentUser } = useAuth();
+  const [usersData, setUsersData] = useState(() => {
+    const savedUsersData = localStorage.getItem("users");
+    return savedUsersData ? JSON.parse(savedUsersData) : [];
+  });
+  const user = usersData.find((user) => user.username === currentUser?.username);
+
+  // Update localStorage whenever usersData changes
+  useEffect(() => {
+    localStorage.setItem("users", JSON.stringify(usersData));
+  }, [usersData]); // This will run whenever usersData changes
+  console.log('Transactions:', transactions);
+  useEffect(() => {
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]); // This will run whenever transactions changes
+
   const effectiveUserName = userName || currentUser?.name || "John Doe";
   const effectiveUserAvatar =
     userAvatar ||
@@ -147,9 +142,7 @@ const Home = ({
               className="w-full"
             >
               <BalanceCard
-                balance={accountData.balance}
-                spendingLimit={accountData.spendingLimit}
-                currentSpending={accountData.spendingUsed}
+                balance={user.balance}
               />
             </motion.div>
           </div>
@@ -161,18 +154,9 @@ const Home = ({
             transition={{ delay: 0.3, duration: 0.5 }}
             className="mb-6 sm:mb-8"
           >
-            {userRole === "commercial_bank" ? (
+            {/* {userRole === "commercial_bank" ? 
               <CommercialBankOverview />
-            ) : (
-              <AccountOverview
-                accountNumber={accountData.accountNumber}
-                accountType={accountData.accountType}
-                balance={accountData.balance}
-                spendingLimit={accountData.spendingLimit}
-                spendingUsed={accountData.spendingUsed}
-                transactions={accountData.transactions}
-              />
-            )}
+            } */}
           </motion.div>
 
           {/* Recent Transactions */}
@@ -182,8 +166,9 @@ const Home = ({
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <TransactionList
-              transactions={recentTransactions}
+              transactions={transactions}
               onViewTransaction={handleViewTransaction}
+              maxRows={2}
             />
           </motion.div>
         </motion.div>
@@ -201,7 +186,7 @@ const Home = ({
         {/* QR Code Generator - Hidden by default, would be shown based on state in a real app */}
         <div className="hidden">
           <QRCodeGenerator
-            accountId={accountData.accountNumber}
+
             accountName={effectiveUserName}
           />
         </div>

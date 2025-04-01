@@ -2,10 +2,13 @@ import React from "react";
 import DashboardLayout from "../layout/DashboardLayout";
 import TransactionList from "../dashboard/TransactionList";
 import { useAuth } from "@/context/AuthContext";
+import { parse } from "path";
 
 const HistoryPage = () => {
   const { currentUser } = useAuth();
   const userName = currentUser?.name || "User";
+  const transactions = localStorage.getItem("transactions");
+  const parsedTransactions = transactions ? JSON.parse(transactions) : [];
 
   return (
     <DashboardLayout activePage="history">
@@ -17,7 +20,7 @@ const HistoryPage = () => {
           View all your transaction history and activity.
         </p>
         <div className="grid gap-6">
-          <TransactionList showAllTransactions={true} />
+          <TransactionList transactions={parsedTransactions} showAllTransactions={true} />
         </div>
       </div>
     </DashboardLayout>

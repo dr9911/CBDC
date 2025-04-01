@@ -25,6 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import path from "path";
 
 interface SidebarProps {
   activePage?: string;
@@ -48,7 +49,14 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       label: "Dashboard",
       icon: <Home size={20} />,
       path: "/",
-      roles: ["user", "commercial_bank", "central_bank"],
+      roles: ["user", "commercial_bank" ],
+    },
+    {
+      id:"accounts",
+      label: "Accounts",
+      icon: <CreditCard size={20} />,
+      path: "/accounts",
+      roles: ["commercial_bank"],
     },
     {
       id: "mint",
