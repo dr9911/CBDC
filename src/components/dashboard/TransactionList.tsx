@@ -148,7 +148,7 @@ const TransactionList = ({
   const getStatusBadgeVariant = (status: Transaction["status"]) => {
     switch (status) {
       case "completed":
-        return "success"; // Assuming you have a "success" variant (often green)
+        return "default"; // Use "default" for completed
       case "pending":
         return "secondary"; // Often grey or yellow/orange
       case "failed":
@@ -327,7 +327,7 @@ const TransactionList = ({
                       <div className="col-span-2 md:col-span-2">
                         <Badge
                           variant={
-                            direction === "incoming" ? "success" : direction === 'outgoing' ? "info" : "secondary" // Use info for outgoing (often blue/purple)
+                            direction === "incoming" ? "default" : direction === 'outgoing' ? "secondary" : "outline" // Adjusted to valid variants
                           }
                           className="text-xs capitalize"
                         >
