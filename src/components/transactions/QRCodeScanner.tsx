@@ -58,8 +58,13 @@ const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
     setIsCameraActive(true);
 
     try {
-      // We don't need to manually access the camera anymore,
-      // QrScanner will handle camera access for us
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: facingMode },
+      });
+  
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
     } catch (err) {
       handleCameraError(err);
     }
