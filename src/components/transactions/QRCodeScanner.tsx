@@ -31,6 +31,9 @@ const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
           highlightScanRegion: true,
           highlightCodeOutline: true,
           preferredCamera: facingMode,
+          returnDetailedScanResult: true,
+          maxScansPerSecond:10
+          
           
         }
       );
