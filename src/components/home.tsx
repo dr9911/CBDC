@@ -35,49 +35,6 @@ const Home = ({
   isAuthenticated,
   sessionTimeRemaining,
   notificationCount = 3,
-  recentTransactions = [
-    {
-      id: "tx-001",
-      date: "2023-06-15T10:30:00",
-      type: "outgoing",
-      amount: 250.0,
-      recipient: "Jane Smith",
-      status: "completed",
-      reference: "Monthly rent",
-    },
-    {
-      id: "tx-002",
-      date: "2023-06-14T14:45:00",
-      type: "incoming",
-      amount: 1200.0,
-      recipient: "Salary deposit",
-      status: "completed",
-    },
-    {
-      id: "tx-003",
-      date: "2023-06-13T09:15:00",
-      type: "outgoing",
-      amount: 45.5,
-      recipient: "Coffee Shop",
-      status: "completed",
-    },
-    {
-      id: "tx-004",
-      date: "2023-06-12T16:20:00",
-      type: "outgoing",
-      amount: 120.75,
-      recipient: "Grocery Store",
-      status: "completed",
-    },
-    {
-      id: "tx-005",
-      date: "2023-06-10T11:05:00",
-      type: "incoming",
-      amount: 500.0,
-      recipient: "Client Payment",
-      status: "completed",
-    },
-  ],
 }: HomeProps) => {
   const { currentUser } = useAuth();
   const [usersData, setUsersData] = useState(() => {
@@ -90,10 +47,12 @@ const Home = ({
   useEffect(() => {
     localStorage.setItem("users", JSON.stringify(usersData));
   }, [usersData]); // This will run whenever usersData changes
-  console.log('Transactions:', transactions);
+  // console.log('Transactions:', transactions);
   useEffect(() => {
     localStorage.setItem("transactions", JSON.stringify(transactions));
   }, [transactions]); // This will run whenever transactions changes
+  const transactionsList = localStorage.getItem("transactions");
+  const parsedTransactions = transactions ? JSON.parse(transactionsList) : [];
 
   const effectiveUserName = userName || currentUser?.name || "John Doe";
   const effectiveUserAvatar =
@@ -166,6 +125,7 @@ const Home = ({
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <TransactionList
+              transactions={parsedTransactions}
               maxRows={2}
             />
           </motion.div>
