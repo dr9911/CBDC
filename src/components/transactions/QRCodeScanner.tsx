@@ -1,213 +1,170 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Camera, X, Check, AlertCircle, RefreshCw } from "lucide-react";
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Camera, X } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import QrScanner from "qr-scanner";
 
-interface QRCodeScannerProps {
-  onScanSuccess?: (data: string) => void;
-  onScanError?: (error: string) => void;
-  onCancel?: () => void;
-  isOpen?: boolean;
-}
-
-const QRCodeScanner = ({
-  onScanSuccess = (data) => console.log("QR Code scanned:", data),
-  onScanError = (error) => console.error("QR Code scan error:", error),
-  onCancel = () => console.log("Scan cancelled"),
-  isOpen = true,
-}: QRCodeScannerProps) => {
+const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState("environment"); // Default to back camera
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scannerRef = useRef<QrScanner | null>(null);
 
-  // Mock function to simulate QR code detection
-  // In a real implementation, you would use a library like jsQR
-  const mockScanQRCode = () => {
-    // Simulate processing time
-    setTimeout(() => {
-      const success = Math.random() > 0.3; // 70% success rate for demo
+  useEffect(() => {
+    if (isCameraActive && videoRef.current) {
+      // Initialize the QR scanner using the current approach
+      scannerRef.current = new QrScanner(
+        videoRef.current,
+        (result) => {
+          console.log("QR Code detected:", result.data);
+          onScanSuccess(result.data);
+          stopCamera(); // Stop scanning once QR code is detected
+        },
+        {
+          onDecodeError: (error) => {
+            console.error("Scanning error:", error);
+          },
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          preferredCamera: facingMode,
+          
+        }
+      );
 
-      if (success) {
-        const mockData = `CBDC:recipient:${Math.random().toString(36).substring(2, 10)}`;
-        onScanSuccess(mockData);
-        setIsScanning(false);
-      } else {
-        setError("Could not detect a valid QR code. Please try again.");
-        setIsScanning(false);
-      }
-    }, 2000);
-  };
+      scannerRef.current.start().catch((error) => {
+        console.error("Failed to start scanner:", error);
+        setError(`Failed to start scanner: ${error.message || "Unknown error"}`);
+        stopCamera();
+        // onScanError?.("Scanner initialization failed");
+      });
+
+      return () => {
+        if (scannerRef.current) {
+          scannerRef.current.stop();
+          scannerRef.current.destroy();
+          scannerRef.current = null;
+        }
+      };
+    }
+  }, [isCameraActive, facingMode, onScanSuccess]);
 
   const startCamera = async () => {
     setError(null);
     setIsScanning(true);
+    setIsCameraActive(true);
 
     try {
-      // In a real implementation, you would request camera access
-      // const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      // if (videoRef.current) {
-      //   videoRef.current.srcObject = stream;
-      // }
-      setHasPermission(true);
-
-      // Start mock scanning
-      mockScanQRCode();
+      // We don't need to manually access the camera anymore,
+      // QrScanner will handle camera access for us
     } catch (err) {
-      setHasPermission(false);
-      setError(
-        "Camera access denied. Please grant permission to use your camera.",
-      );
-      setIsScanning(false);
-      onScanError("Camera permission denied");
+      handleCameraError(err);
     }
+  };
+
+  const handleCameraError = (err) => {
+    setHasPermission(false);
+    if (err.name === "NotAllowedError") {
+      setError("Camera access denied. Please allow camera access.");
+    } else if (err.name === "NotFoundError") {
+      setError("No camera found on this device.");
+    } else if (err.name === "NotReadableError") {
+      setError("Camera is already in use by another application.");
+    } else {
+      setError(`Camera error: ${err.message || "Unknown error"}`);
+    }
+    setIsScanning(false);
+    setIsCameraActive(false);
+    // onScanError?.(err.message || "Camera access error");
   };
 
   const stopCamera = () => {
     setIsScanning(false);
-    // In a real implementation, you would stop the camera stream
-    // if (videoRef.current && videoRef.current.srcObject) {
-    //   const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-    //   tracks.forEach(track => track.stop());
-    //   videoRef.current.srcObject = null;
-    // }
-  };
+    setIsCameraActive(false);
 
-  const handleCancel = () => {
-    stopCamera();
-    onCancel();
-  };
-
-  const retryScanning = () => {
-    setError(null);
-    startCamera();
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      startCamera();
+    if (scannerRef.current) {
+      scannerRef.current.stop();
     }
+  };
 
-    return () => {
-      stopCamera();
-    };
-  }, [isOpen]);
+  const toggleCamera = () => {
+    if (scannerRef.current) {
+      scannerRef.current.stop();
+    }
+    
+    setFacingMode(facingMode === "environment" ? "user" : "environment");
+  };
 
-  if (!isOpen) return null;
+  const handleClose = () => {
+    stopCamera();
+    onCancel?.();
+  };
 
   return (
-    <Card className="w-full max-w-md mx-auto bg-background border-border shadow-lg">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-xl font-bold">Scan QR Code</CardTitle>
-        <CardDescription>
-          Position the QR code within the frame to scan recipient details
-        </CardDescription>
+        <CardTitle>Scan QR Code</CardTitle>
       </CardHeader>
-
       <CardContent>
-        <div className="relative aspect-square w-full max-w-[400px] mx-auto bg-muted rounded-lg overflow-hidden">
-          {/* Video element for camera feed */}
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
-            autoPlay
-            playsInline
-            muted
-          />
-
-          {/* Canvas for QR processing (hidden) */}
-          <canvas ref={canvasRef} className="hidden" />
-
-          {/* Scanning overlay */}
-          {isScanning && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <motion.div
-                className="w-64 h-64 border-2 border-primary rounded-lg"
-                initial={{ opacity: 0.5 }}
-                animate={{ opacity: 1 }}
-                transition={{
-                  duration: 0.5,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                }}
-              />
-              <motion.div
-                className="mt-4 text-primary font-medium"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                Scanning...
-              </motion.div>
-            </div>
-          )}
-
-          {/* Placeholder when camera is not active */}
-          {!isScanning && !error && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <Camera size={64} className="text-muted-foreground mb-4" />
-              <p className="text-center text-muted-foreground">
-                Camera is not active. Click "Start Scanning" to begin.
-              </p>
-            </div>
-          )}
-
-          {/* Error state */}
-          {error && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-              <AlertCircle size={64} className="text-destructive mb-4" />
-              <p className="text-center text-destructive font-medium">
-                {error}
-              </p>
-            </div>
-          )}
-        </div>
-
+        {!isCameraActive ? (
+          <div className="flex flex-col items-center justify-center h-64">
+            <Camera size={64} className="text-muted-foreground mb-4" />
+            <p>Click "Start Scanning" to activate the camera.</p>
+          </div>
+        ) : (
+          <div className="relative w-full h-64">
+            <video 
+              ref={videoRef} 
+              className="absolute inset-0 w-full h-full object-cover rounded-md" 
+              autoPlay 
+              playsInline 
+              muted 
+            />
+            {isScanning && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-64 h-64 border-2 border-primary rounded-lg relative">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary-500"></div>
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary-500"></div>
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary-500"></div>
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary-500"></div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {error && (
           <Alert variant="destructive" className="mt-4">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
       </CardContent>
-
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={handleCancel}>
+        <Button variant="outline" onClick={handleClose}>
           <X className="mr-2 h-4 w-4" />
-          Cancel
+          Close
         </Button>
-
-        {error ? (
-          <Button onClick={retryScanning}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
-          </Button>
-        ) : (
-          <Button
-            onClick={isScanning ? stopCamera : startCamera}
-            disabled={hasPermission === false}
-          >
-            {isScanning ? (
-              <>
-                <X className="mr-2 h-4 w-4" />
-                Stop Scanning
-              </>
-            ) : (
-              <>
-                <Camera className="mr-2 h-4 w-4" />
-                Start Scanning
-              </>
-            )}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {isCameraActive && (
+            <Button variant="outline" onClick={toggleCamera}>
+              <Camera className="mr-2 h-4 w-4" />
+              {facingMode === "environment" ? "Front Camera" : "Back Camera"}
+            </Button>
+          )}
+          {isCameraActive ? (
+            <Button onClick={stopCamera}>
+              <X className="mr-2 h-4 w-4" />
+              Stop Scanning
+            </Button>
+          ) : (
+            <Button onClick={startCamera}>
+              <Camera className="mr-2 h-4 w-4" />
+              Start Scanning
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
