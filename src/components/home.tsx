@@ -166,7 +166,7 @@ const Home = ({
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <TransactionList
-              transactions={transactions}
+
               onViewTransaction={handleViewTransaction}
               maxRows={2}
             />
@@ -179,9 +179,9 @@ const Home = ({
         </div>
 
         {/* QR Code Scanner - Hidden by default, would be shown based on state in a real app */}
-        <div className="hidden">
+        {/* <div className="hidden">
           <QRCodeScanner />
-        </div>
+        </div> */}
 
         {/* QR Code Generator - Hidden by default, would be shown based on state in a real app */}
         <div className="hidden">
