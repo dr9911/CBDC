@@ -1,32 +1,85 @@
 [
   {
     "id": "cb-001",
-    "username": "central_bank",
-    "passwordHash": "$2a$10$8KVj5Sv4K8k5aQGiEMOg7eP3W9A2rVgQX9x9X9X9X9X9X9X9X9",
+    "username": "central_bank_1",
     "role": "central_bank",
-    "name": "Federal Reserve",
-    "email": "admin@federalreserve.gov",
-    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=FederalReserve",
+    "name": "Central Bank User 1",
+    "email": "admin@centralbank.gov",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=CBUser1",
     "lastLogin": "2023-09-15T14:30:00Z"
   },
   {
+    "id": "cb-002",
+    "username": "central_bank_2",
+    "role": "central_bank",
+    "name": "Central Bank User 2",
+    "email": "admin@centralbank.gov",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=CBUser2",
+    "lastLogin": "2023-09-15T14:45:00Z"
+  },
+  {
+    "id": "cb-003",
+    "username": "central_bank_3",
+    "role": "central_bank",
+    "name": "Central Bank User 3",
+    "email": "admin@centralbank.gov",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=CBUser3",
+    "lastLogin": "2023-09-15T15:00:00Z"
+  },
+  {
+    "id": "system",
+    "type": "metadata",
+    "totalMinted": 1000000,
+    "pendingApprovals": []
+  },
+  {
     "id": "cmb-001",
-    "username": "commercial_bank",
-    "passwordHash": "$2a$10$8KVj5Sv4K8k5aQGiEMOg7eP3W9A2rVgQX9x9X9X9X9X9X9X9X9",
+    "username": "commercial_bank_1",
     "role": "commercial_bank",
     "name": "First National Bank",
+    "balance": 50000,
     "email": "admin@firstnational.com",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=FirstNational",
     "lastLogin": "2023-09-14T09:15:00Z"
   },
   {
+    "id": "cmb-002",
+    "username": "commercial_bank_2",
+    "role": "commercial_bank",
+    "name": "Second National Bank",
+    "balance": 40000,
+    "email": "admin@secondnational.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=SecondNational",
+    "lastLogin": "2023-09-14T09:30:00Z"
+  },
+  {
     "id": "usr-001",
-    "username": "user",
-    "passwordHash": "$2a$10$8KVj5Sv4K8k5aQGiEMOg7eP3W9A2rVgQX9x9X9X9X9X9X9X9X9",
+    "username": "user1",
     "role": "user",
-    "name": "John Doe",
-    "email": "john.doe@example.com",
-    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
+    "name": "Florian",
+    "balance": 1440,
+    "email": "florian.doe@example.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Florian",
     "lastLogin": "2023-09-16T10:45:00Z"
+  },
+  {
+    "id": "usr-002",
+    "username": "user2",
+    "role": "user",
+    "name": "Stefan",
+    "balance": 2000,
+    "email": "stefan.doe@example.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Stefan",
+    "lastLogin": "2023-09-16T11:00:00Z"
+  },
+  {
+    "id": "usr-003",
+    "username": "user3",
+    "role": "user",
+    "name": "Robert",
+    "balance": 500,
+    "email": "robert.doe@example.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Robert",
+    "lastLogin": "2023-09-16T11:15:00Z"
   }
 ]

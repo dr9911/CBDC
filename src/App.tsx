@@ -52,7 +52,7 @@ function App() {
           <Route
             path="/cbdc"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="central_bank">
                 <CBDCDashboard />
               </ProtectedRoute>
             }
