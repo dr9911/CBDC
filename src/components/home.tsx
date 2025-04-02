@@ -49,6 +49,7 @@ const Home = ({
   }, [usersData]); // This will run whenever usersData changes
   // console.log('Transactions:', transactions);
   useEffect(() => {
+    console.log("Transactions:", transactions);
     localStorage.setItem("transactions", JSON.stringify(transactions));
   }, [transactions]); // This will run whenever transactions changes
   const transactionsList = localStorage.getItem("transactions");
