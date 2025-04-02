@@ -124,10 +124,10 @@ const Home = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
-            <TransactionList
+            {/* <TransactionList
               transactions={parsedTransactions}
               maxRows={2}
-            />
+            /> */}
           </motion.div>
         </motion.div>
 
