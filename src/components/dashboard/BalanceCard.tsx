@@ -87,10 +87,10 @@ const BalanceCard = ({
   function handleDataFromQR(data: string) {
     console.log("QR Code data:", data);
     addToBalance(data);
-    setQRData(data);
-    setRecipient(data); // Autofill recipient with scanned username
+    // setQRData(data);
+    // setRecipient(data); // Autofill recipient with scanned username
     setQRModalOpen(false);
-    setSendModalOpen(true); // Open send modal with scanned data
+    // setSendModalOpen(true); // Open send modal with scanned data
   }
   function addToBalance(data: string) {
     const valueToAdd = 20; // Hardcoded value for demonstration
