@@ -86,12 +86,18 @@ const BalanceCard = ({
   // Handle QR Code Data
   function handleDataFromQR(data: string) {
     console.log("QR Code data:", data);
+    addToBalance(data);
     setQRData(data);
     setRecipient(data); // Autofill recipient with scanned username
     setQRModalOpen(false);
     setSendModalOpen(true); // Open send modal with scanned data
   }
+  function addToBalance(data: string) {
+    const valueToAdd = 20; // Hardcoded value for demonstration
+    const parsedData = parseFloat(data);
+    setCurrentBalance(prevBalance => prevBalance + valueToAdd);
 
+  }
   // --- Handle Send Token ---
   const handleSend = async () => {
     setIsSending(true);
