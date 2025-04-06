@@ -95,8 +95,7 @@ const BalanceCard = ({
   function addToBalance(data: string) {
     const valueToAdd = 20; // Hardcoded value for demonstration
     const parsedData = parseFloat(data);
-    setCurrentBalance(prevBalance => prevBalance + valueToAdd);
-
+    setCurrentBalance((prevBalance) => prevBalance + valueToAdd);
   }
   // --- Handle Send Token ---
   const handleSend = async () => {
@@ -126,7 +125,9 @@ const BalanceCard = ({
         if (!Array.isArray(usersData)) usersData = [];
 
         const storedTransactions = localStorage.getItem("transactions");
-        transactionsData = storedTransactions ? JSON.parse(storedTransactions) : [];
+        transactionsData = storedTransactions
+          ? JSON.parse(storedTransactions)
+          : [];
         if (!Array.isArray(transactionsData)) transactionsData = [];
       } catch (error) {
         console.error("Failed to parse data from localStorage:", error);
@@ -134,8 +135,12 @@ const BalanceCard = ({
         throw error;
       }
 
-      const senderIndex = usersData.findIndex(user => user.id === currentUser?.id);
-      const receiverIndex = usersData.findIndex(user => user.username === recipient);
+      const senderIndex = usersData.findIndex(
+        (user) => user.id === currentUser?.id
+      );
+      const receiverIndex = usersData.findIndex(
+        (user) => user.username === recipient
+      );
 
       if (senderIndex === -1) {
         setGeneralError("Your user data could not be found. Please re-login.");
@@ -207,10 +212,20 @@ const BalanceCard = ({
           </motion.div>
         </CardContent>
         <CardFooter className="flex justify-between gap-2 p-3 sm:p-6">
-          <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm" onClick={() => setSendModalOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 text-xs sm:text-sm"
+            onClick={() => setSendModalOpen(true)}
+          >
             <Send className="mr-1" size={16} /> Send
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm" onClick={() => setQRModalOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 text-xs sm:text-sm"
+            onClick={() => setQRModalOpen(true)}
+          >
             <QrCode className="mr-1" size={16} /> Scan QR
           </Button>
         </CardFooter>
@@ -222,8 +237,17 @@ const BalanceCard = ({
           <DialogHeader>
             <DialogTitle>Send {currency}</DialogTitle>
           </DialogHeader>
-          <Input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="Recipient username" />
-          <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount" />
+          <Input
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            placeholder="Recipient username"
+          />
+          <Input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Amount"
+          />
           <DialogFooter>
             <Button onClick={handleSend} disabled={isSending}>
               {isSending ? <Loader2 className="mr-2 animate-spin" /> : "Send"}
@@ -235,7 +259,10 @@ const BalanceCard = ({
       {/* QR Code Scanner Modal */}
       <Dialog open={isQRModalOpen} onOpenChange={setQRModalOpen}>
         <DialogContent>
-          <QRCodeScanner onScanSuccess={handleDataFromQR} onCancel={()=> setQRModalOpen(false)}/>
+          <QRCodeScanner
+            onScanSuccess={handleDataFromQR}
+            onCancel={() => setQRModalOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </>

@@ -33,10 +33,8 @@ const LoginPage = () => {
 
     try {
       // In a real app, we would use the selected user type
-      // For demo, we're using predefined usernames
       let loginUsername = username;
 
-      // If no username is provided, use the default for the selected role
       if (!username) {
         switch (userType) {
           case "central_bank":
@@ -53,7 +51,6 @@ const LoginPage = () => {
       const success = await login(loginUsername, password);
 
       if (success) {
-        // Redirect based on user type
         switch (userType) {
           case "central_bank":
             navigate("/mint");

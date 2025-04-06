@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 import {
   User,
   Mail,
@@ -14,7 +14,6 @@ import {
   Copy,
   Download,
   Share2,
-  ArrowRight,
 } from "lucide-react";
 import {
   Card,
@@ -44,20 +43,39 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "../layout/DashboardLayout";
 
-interface ProfilePageProps {
-  userName?: string;
-  userAvatar?: string;
-}
+const ProfilePage = () => {
+  const { currentUser } = useAuth();
 
-const ProfilePage = ({
-  userName = "John Doe",
-  userAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-}: ProfilePageProps) => {
+  if (!currentUser) {
+    return <div>Loading...</div>;
+  }
+
+  // Use current user details from AuthContext
+  const userName = currentUser.name;
+  const userAvatar =
+    currentUser.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+      userName
+    )}`;
+
+  // Build profile data from currentUser; using fallback values for properties not provided
+  const profileData = {
+    name: currentUser.name,
+    email: currentUser.email,
+    phone: "N/A",
+    address: "N/A",
+    dateJoined: currentUser.lastLogin
+      ? new Date(currentUser.lastLogin).toLocaleDateString()
+      : "N/A",
+    accountId: currentUser.id,
+    verificationLevel: "Advanced",
+    twoFactorEnabled: false,
+  };
+
   const [activeTab, setActiveTab] = useState("profile");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showReceiveDialog, setShowReceiveDialog] = useState(false);
@@ -68,30 +86,14 @@ const ProfilePage = ({
   const [receiveAmount, setReceiveAmount] = useState("");
   const [qrSize, setQrSize] = useState("medium");
 
-  // User profile data
-  const profileData = {
-    name: userName,
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main Street, New York, NY 10001",
-    dateJoined: "January 15, 2023",
-    accountId: "DUAL-1234-5678-9012",
-    verificationLevel: "Advanced",
-    twoFactorEnabled: true,
-  };
-
-  // Handle send money form submission
   const handleSendMoney = () => {
-    // In a real app, this would process the transaction
     setShowSendDialog(false);
     setShowSuccessDialog(true);
-    // Reset form
     setSendAmount("");
     setSendRecipient("");
     setSendNote("");
   };
 
-  // Mock QR code image URL for receive money
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     JSON.stringify({
       accountId: profileData.accountId,
@@ -99,16 +101,14 @@ const ProfilePage = ({
       amount: receiveAmount ? parseFloat(receiveAmount) : 0,
       currency: "DUAL",
       timestamp: new Date().toISOString(),
-    }),
+    })
   )}`;
 
-  // Handle copy to clipboard
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(profileData.accountId);
     alert("Account ID copied to clipboard");
   };
 
-  // Handle QR code download
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = qrImageUrl;
@@ -118,7 +118,6 @@ const ProfilePage = ({
     document.body.removeChild(link);
   };
 
-  // Handle share
   const handleShare = () => {
     if (navigator.share) {
       navigator
@@ -155,9 +154,7 @@ const ProfilePage = ({
             </Button>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Profile Summary Card */}
           <Card className="md:col-span-1 bg-card">
             <CardHeader className="pb-2">
               <CardTitle>Profile Summary</CardTitle>
@@ -206,8 +203,6 @@ const ProfilePage = ({
               </Button>
             </CardFooter>
           </Card>
-
-          {/* Main Content Area */}
           <div className="md:col-span-2">
             <Tabs
               defaultValue="profile"
@@ -220,7 +215,6 @@ const ProfilePage = ({
                 <TabsTrigger value="security">Security</TabsTrigger>
                 <TabsTrigger value="preferences">Preferences</TabsTrigger>
               </TabsList>
-
               <TabsContent value="profile" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -291,7 +285,6 @@ const ProfilePage = ({
                   </CardFooter>
                 </Card>
               </TabsContent>
-
               <TabsContent value="security" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -318,7 +311,6 @@ const ProfilePage = ({
                           {profileData.twoFactorEnabled ? "Manage" : "Enable"}
                         </Button>
                       </div>
-
                       <div className="flex justify-between items-center p-4 border rounded-lg">
                         <div className="flex items-start space-x-3">
                           <Calendar className="h-5 w-5 text-primary mt-0.5" />
@@ -331,7 +323,6 @@ const ProfilePage = ({
                         </div>
                         <Button variant="outline">View History</Button>
                       </div>
-
                       <div className="flex justify-between items-center p-4 border rounded-lg">
                         <div className="flex items-start space-x-3">
                           <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
@@ -348,7 +339,6 @@ const ProfilePage = ({
                   </CardContent>
                 </Card>
               </TabsContent>
-
               <TabsContent value="preferences" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -368,7 +358,6 @@ const ProfilePage = ({
                         </div>
                         <Button variant="outline">Configure</Button>
                       </div>
-
                       <div className="flex justify-between items-center p-4 border rounded-lg">
                         <div>
                           <h3 className="font-medium">SMS Notifications</h3>
@@ -378,7 +367,6 @@ const ProfilePage = ({
                         </div>
                         <Button variant="outline">Configure</Button>
                       </div>
-
                       <div className="flex justify-between items-center p-4 border rounded-lg">
                         <div>
                           <h3 className="font-medium">App Notifications</h3>
@@ -395,8 +383,6 @@ const ProfilePage = ({
             </Tabs>
           </div>
         </div>
-
-        {/* Send Money Dialog */}
         <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -472,8 +458,6 @@ const ProfilePage = ({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Receive Money Dialog */}
         <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -494,7 +478,6 @@ const ProfilePage = ({
                   `}
                 />
               </div>
-
               <div className="bg-muted p-3 rounded-md text-sm">
                 <p className="font-medium">
                   Account ID:{" "}
@@ -505,7 +488,6 @@ const ProfilePage = ({
                   <span className="font-normal">{profileData.name}</span>
                 </p>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="receive-amount">
                   Requested Amount (Optional)
@@ -529,7 +511,6 @@ const ProfilePage = ({
                   </Select>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="qr-size">QR Code Size</Label>
                 <Select value={qrSize} onValueChange={setQrSize}>
@@ -551,23 +532,18 @@ const ProfilePage = ({
                   size="sm"
                   onClick={handleCopyToClipboard}
                 >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy
+                  <Copy className="h-4 w-4 mr-2" /> Copy
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleDownload}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
+                  <Download className="h-4 w-4 mr-2" /> Download
                 </Button>
               </div>
               <Button size="sm" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
+                <Share2 className="h-4 w-4 mr-2" /> Share
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Transaction Success Dialog */}
         <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
           <DialogContent className="sm:max-w-[400px]">
             <DialogHeader>

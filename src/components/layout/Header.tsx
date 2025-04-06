@@ -69,9 +69,7 @@ const Header = ({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to search results page or filter current page
       console.log(`Searching for: ${searchQuery}`);
-      // Example: navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 
@@ -85,26 +83,7 @@ const Header = ({
         <MobileMenu activePage={activePage} />
         <h1 className="text-xl font-semibold">TND Platform</h1>
       </div>
-
-      {/* Search bar - visible on larger screens */}
-      <form
-        onSubmit={handleSearch}
-        className="hidden md:flex max-w-md flex-1 mx-4"
-      >
-        <div className="relative w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="pl-8 w-full"
-            value={searchQuery}
-            onChange={handleSearchChange}
-          />
-        </div>
-      </form>
-
       <div className="flex items-center space-x-4">
-        {/* Search button - visible on mobile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon">
@@ -127,7 +106,6 @@ const Header = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Authentication Status Indicator */}
         <div className="flex items-center">
           <Badge
             variant={effectiveIsAuthenticated ? "default" : "destructive"}
@@ -135,15 +113,11 @@ const Header = ({
           >
             {effectiveIsAuthenticated ? "Authenticated" : "Not Authenticated"}
           </Badge>
-
-          {/* User Role Indicator */}
           {effectiveIsAuthenticated && (
             <Badge variant="outline" className="mr-2">
               {userRole.replace("_", " ")}
             </Badge>
           )}
-
-          {/* Session Timeout Warning */}
           {effectiveIsAuthenticated && effectiveSessionTimeRemaining <= 5 && (
             <Badge
               variant="destructive"
@@ -153,7 +127,6 @@ const Header = ({
               Session expires in {effectiveSessionTimeRemaining} min
             </Badge>
           )}
-
           {effectiveIsAuthenticated &&
             effectiveSessionTimeRemaining > 5 &&
             effectiveSessionTimeRemaining <= 10 && (
@@ -167,7 +140,6 @@ const Header = ({
             )}
         </div>
 
-        {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
@@ -220,7 +192,6 @@ const Header = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Settings */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -245,25 +216,6 @@ const Header = ({
             <DropdownMenuItem className="cursor-pointer">
               Security
             </DropdownMenuItem>
-            {userRole === "central_bank" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => navigate("/user-management")}
-                >
-                  <Shield className="mr-2 h-4 w-4" />
-                  User Management
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => navigate("/user-documentation")}
-                >
-                  <Shield className="mr-2 h-4 w-4" />
-                  Documentation
-                </DropdownMenuItem>
-              </>
-            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer">
               Help & Support
@@ -271,7 +223,6 @@ const Header = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center space-x-2 p-1">

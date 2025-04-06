@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "./layout/DashboardLayout";
-import AccountOverview from "./dashboard/AccountOverview";
 import CommercialBankOverview from "./dashboard/CommercialBankOverview";
 import BalanceCard from "./dashboard/BalanceCard";
+import AssetsCard from "./dashboard/AssetsCard";
 import TransactionList from "./dashboard/TransactionList";
 import TransactionForm from "./transactions/TransactionForm";
-import QRCodeScanner from "./transactions/QRCodeScanner";
 import QRCodeGenerator from "./transactions/QRCodeGenerator";
 import { useAuth } from "@/context/AuthContext";
-import usersData from "@/data/users.json";
+import usersDataJson from "@/data/users.json";
 import transactions from "@/data/transactions.json";
 
 interface HomeProps {
@@ -37,22 +36,27 @@ const Home = ({
   notificationCount = 3,
 }: HomeProps) => {
   const { currentUser } = useAuth();
-  const [usersData, setUsersData] = useState(() => {
-    const savedUsersData = localStorage.getItem("users");
-    return savedUsersData ? JSON.parse(savedUsersData) : [];
-  });
-  const user = usersData.find((user) => user.username === currentUser?.username);
 
-  // Update localStorage whenever usersData changes
+  const [usersData, setUsersData] = useState(() => {
+    const saved = localStorage.getItem("users");
+    return saved ? JSON.parse(saved) : usersDataJson;
+  });
+  const user = usersData.find(
+    (usr: any) => usr.username === currentUser?.username
+  );
+
   useEffect(() => {
     localStorage.setItem("users", JSON.stringify(usersData));
-  }, [usersData]); // This will run whenever usersData changes
-  // console.log('Transactions:', transactions);
+  }, [usersData]);
+
   useEffect(() => {
     localStorage.setItem("transactions", JSON.stringify(transactions));
-  }, [transactions]); // This will run whenever transactions changes
+  }, []);
+
   const transactionsList = localStorage.getItem("transactions");
-  const parsedTransactions = transactions ? JSON.parse(transactionsList) : [];
+  const parsedTransactions = transactionsList
+    ? JSON.parse(transactionsList)
+    : [];
 
   const effectiveUserName = userName || currentUser?.name || "John Doe";
   const effectiveUserAvatar =
@@ -61,95 +65,86 @@ const Home = ({
     `https://api.dicebear.com/7.x/avataaars/svg?seed=John`;
   const userRole = currentUser?.role || "user";
 
-  // Function to handle viewing transaction details
   const handleViewTransaction = (id: string) => {
     console.log(`View transaction details for ID: ${id}`);
-    // In a real app, this would open a modal or navigate to transaction details
   };
 
-  // Function to handle transaction form submission
   const handleTransactionSubmit = (values: any) => {
     console.log("Transaction submitted:", values);
-    // In a real app, this would process the transaction
   };
 
   return (
-    <DashboardLayout
-      userName={effectiveUserName}
-      userAvatar={effectiveUserAvatar}
-      isAuthenticated={isAuthenticated}
-      sessionTimeRemaining={sessionTimeRemaining}
-      notificationCount={notificationCount}
-    >
-      <div className="space-y-6 sm:space-y-8">
-        {/* Main dashboard content */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
-            Dashboard
-          </h1>
+    <div className="fixed inset-0">
+      <DashboardLayout
+        userName={effectiveUserName}
+        userAvatar={effectiveUserAvatar}
+        isAuthenticated={isAuthenticated}
+        sessionTimeRemaining={sessionTimeRemaining}
+        notificationCount={notificationCount}
+      >
+        <div className="h-full">
+          <div className="h-full overflow-auto px-4 sm:px-6 pb-6">
+            <div className="space-y-6 sm:space-y-8">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+                  Dashboard
+                </h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            {/* Balance Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-              className="w-full"
-            >
-              <BalanceCard
-                balance={user.balance}
-              />
-            </motion.div>
+                {/* Flex container with a very small gap */}
+                <div className="flex flex-col md:flex-row gap-5 mb-6 sm:mb-8">
+                  <div>
+                    <BalanceCard balance={user?.balance || 0} />
+                  </div>
+                  <div>
+                    <AssetsCard
+                      stocks={100000}
+                      bonds={50000}
+                      securities={25000}
+                    />
+                  </div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                  className="mb-6"
+                >
+                  <TransactionList
+                    transactions={parsedTransactions}
+                    maxRows={5}
+                    onViewTransaction={handleViewTransaction}
+                  />
+                </motion.div>
+
+                {userRole === "commercial_bank" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    className="mb-6 sm:mb-8"
+                  >
+                    <CommercialBankOverview />
+                  </motion.div>
+                )}
+              </motion.div>
+
+              <div className="hidden">
+                <TransactionForm onSubmit={handleTransactionSubmit} />
+              </div>
+
+              <div className="hidden">
+                <QRCodeGenerator accountName={effectiveUserName} />
+              </div>
+            </div>
           </div>
-
-          {/* Account Overview */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="mb-6 sm:mb-8"
-          >
-            {/* {userRole === "commercial_bank" ? 
-              <CommercialBankOverview />
-            } */}
-          </motion.div>
-
-          {/* Recent Transactions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            {/* <TransactionList
-              transactions={parsedTransactions}
-              maxRows={2}
-            /> */}
-          </motion.div>
-        </motion.div>
-
-        {/* Transaction Form Section - Hidden by default, would be shown based on state in a real app */}
-        <div className="hidden">
-          <TransactionForm onSubmit={handleTransactionSubmit} />
         </div>
-
-        {/* QR Code Scanner - Hidden by default, would be shown based on state in a real app */}
-        {/* <div className="hidden">
-          <QRCodeScanner />
-        </div> */}
-
-        {/* QR Code Generator - Hidden by default, would be shown based on state in a real app */}
-        <div className="hidden">
-          <QRCodeGenerator
-
-            accountName={effectiveUserName}
-          />
-        </div>
-      </div>
-    </DashboardLayout>
+      </DashboardLayout>
+    </div>
   );
 };
 

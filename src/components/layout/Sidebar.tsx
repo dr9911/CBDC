@@ -3,17 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Home,
   CreditCard,
-  Send,
-  QrCode,
   History,
   Settings,
-  HelpCircle,
-  LogOut,
   Shield,
-  AlertTriangle,
   Banknote,
-  Users,
-  FileText,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,15 +19,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import path from "path";
 
 interface SidebarProps {
   activePage?: string;
 }
 
 const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
-  const { currentUser, logout, sessionTimeRemaining, refreshSession } =
-    useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const userRole = currentUser?.role || "user";
 
@@ -49,10 +41,10 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       label: "Dashboard",
       icon: <Home size={20} />,
       path: "/",
-      roles: ["user", "commercial_bank" ],
+      roles: ["user", "commercial_bank"],
     },
     {
-      id:"accounts",
+      id: "accounts",
       label: "Accounts",
       icon: <CreditCard size={20} />,
       path: "/accounts",
@@ -65,12 +57,13 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       path: "/mint",
       roles: ["central_bank"],
     },
+    // Removed "user" role from transaction history item
     {
       id: "history",
       label: "Transaction History",
       icon: <History size={20} />,
       path: "/history",
-      roles: ["user", "commercial_bank", "central_bank"],
+      roles: ["commercial_bank", "central_bank"],
     },
     {
       id: "settings",
@@ -81,20 +74,13 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
     },
   ];
 
-  // Role-specific menu items
-  const roleSpecificItems = [];
-
   // Filter menu items based on user role
-  const menuItems = [
-    ...baseMenuItems.filter((item) => item.roles.includes(userRole)),
-    ...roleSpecificItems.filter((item) => item.roles.includes(userRole)),
-  ];
-
-  // Support and security items
+  const menuItems = baseMenuItems.filter((item) =>
+    item.roles.includes(userRole)
+  );
 
   return (
     <aside className="h-full w-[280px] bg-background border-r border-border flex flex-col p-4 overflow-y-auto">
-      {/* Logo and branding */}
       <div className="flex items-center mb-8 px-2">
         <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center mr-3">
           <CreditCard className="text-primary-foreground" size={20} />
@@ -104,21 +90,15 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
           <p className="text-xs text-muted-foreground">CBDC Dashboard</p>
         </div>
       </div>
-
-      {/* Security status indicator */}
-
-      {/* User role indicator */}
       <div className="mb-4 px-2">
         <Badge variant="outline" className="w-full justify-center py-1">
           {userRole === "central_bank"
             ? "Central Bank Access"
             : userRole === "commercial_bank"
-              ? "Commercial Bank Access"
-              : "User Access"}
+            ? "Commercial Bank Access"
+            : "User Access"}
         </Badge>
       </div>
-
-      {/* Main navigation */}
       <nav className="space-y-1 mb-6">
         {menuItems.map((item) => (
           <TooltipProvider key={item.id}>
@@ -127,7 +107,9 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
                 <Link to={item.path}>
                   <Button
                     variant={activePage === item.id ? "secondary" : "ghost"}
-                    className={`w-full justify-start ${activePage === item.id ? "font-medium" : ""}`}
+                    className={`w-full justify-start ${
+                      activePage === item.id ? "font-medium" : ""
+                    }`}
                   >
                     <span className="mr-3">{item.icon}</span>
                     {item.label}
@@ -139,15 +121,8 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
           </TooltipProvider>
         ))}
       </nav>
-
       <Separator className="my-4" />
-
-      {/* Support and security section */}
-
-      {/* Spacer to push logout to bottom */}
       <div className="flex-grow" />
-
-      {/* Logout button */}
       <Button
         variant="outline"
         className="w-full justify-start mt-auto"
