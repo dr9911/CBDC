@@ -5,7 +5,6 @@ import {
   CreditCard,
   History,
   Settings,
-  Shield,
   Banknote,
   LogOut,
 } from "lucide-react";
@@ -57,7 +56,6 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
       path: "/mint",
       roles: ["central_bank"],
     },
-    // Removed "user" role from transaction history item
     {
       id: "history",
       label: "Transaction History",
@@ -106,6 +104,7 @@ const Sidebar = ({ activePage = "dashboard" }: SidebarProps) => {
               <TooltipTrigger asChild>
                 <Link to={item.path}>
                   <Button
+                    type="button"
                     variant={activePage === item.id ? "secondary" : "ghost"}
                     className={`w-full justify-start ${
                       activePage === item.id ? "font-medium" : ""

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   User,
@@ -76,6 +76,7 @@ const ProfilePage = () => {
     twoFactorEnabled: false,
   };
 
+  // Tabs and Dialog state
   const [activeTab, setActiveTab] = useState("profile");
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [showReceiveDialog, setShowReceiveDialog] = useState(false);
@@ -86,6 +87,68 @@ const ProfilePage = () => {
   const [receiveAmount, setReceiveAmount] = useState("");
   const [qrSize, setQrSize] = useState("medium");
 
+  // Additional Dialog states
+  const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
+  const [showTwoFADialog, setShowTwoFADialog] = useState(false);
+  const [showLoginHistoryDialog, setShowLoginHistoryDialog] = useState(false);
+  const [showChangePasswordDialog, setShowChangePasswordDialog] =
+    useState(false);
+  const [showConfigureEmailDialog, setShowConfigureEmailDialog] =
+    useState(false);
+  const [showConfigureSMSDialog, setShowConfigureSMSDialog] = useState(false);
+  const [
+    showConfigureAppNotificationsDialog,
+    setShowConfigureAppNotificationsDialog,
+  ] = useState(false);
+
+  // 1) Email Notification Settings
+  const [emailSettings, setEmailSettings] = useState({
+    newsletter: false,
+    securityAlerts: false,
+    productUpdates: false,
+  });
+
+  // 2) SMS Notification Settings
+  const [smsSettings, setSmsSettings] = useState({
+    receiveSMSAlerts: false,
+  });
+
+  // 3) App Notification Settings
+  const [appSettings, setAppSettings] = useState({
+    enablePushNotifications: false,
+  });
+
+  // On mount, load existing notification settings from localStorage
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("emailSettings");
+    if (storedEmail) {
+      setEmailSettings(JSON.parse(storedEmail));
+    }
+    const storedSMS = localStorage.getItem("smsSettings");
+    if (storedSMS) {
+      setSmsSettings(JSON.parse(storedSMS));
+    }
+    const storedApp = localStorage.getItem("appSettings");
+    if (storedApp) {
+      setAppSettings(JSON.parse(storedApp));
+    }
+  }, []);
+
+  // Handlers for saving each type of notification settings
+  const handleSaveEmailSettings = () => {
+    localStorage.setItem("emailSettings", JSON.stringify(emailSettings));
+    setShowConfigureEmailDialog(false);
+  };
+  const handleSaveSMSSettings = () => {
+    localStorage.setItem("smsSettings", JSON.stringify(smsSettings));
+    setShowConfigureSMSDialog(false);
+  };
+  const handleSaveAppSettings = () => {
+    localStorage.setItem("appSettings", JSON.stringify(appSettings));
+    setShowConfigureAppNotificationsDialog(false);
+  };
+
+  // Send & Receive
   const handleSendMoney = () => {
     setShowSendDialog(false);
     setShowSuccessDialog(true);
@@ -106,7 +169,9 @@ const ProfilePage = () => {
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(profileData.accountId);
-    alert("Account ID copied to clipboard");
+    // No alert popup; you could show a toast or something else if you want
+    // For a quick feedback, you can do:
+    console.log("Account ID copied to clipboard");
   };
 
   const handleDownload = () => {
@@ -128,13 +193,14 @@ const ProfilePage = () => {
         })
         .catch((err) => console.error("Error sharing:", err));
     } else {
-      alert("Web Share API not supported in your browser");
+      console.log("Web Share API not supported in your browser");
     }
   };
 
   return (
     <DashboardLayout userName={userName} userAvatar={userAvatar}>
-      <div className="space-y-6">
+      <div className="space-y-6 p-4">
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">My Profile</h1>
@@ -154,6 +220,7 @@ const ProfilePage = () => {
             </Button>
           </div>
         </div>
+        {/* Profile Summary & Tabs */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="md:col-span-1 bg-card">
             <CardHeader className="pb-2">
@@ -197,11 +264,6 @@ const ProfilePage = () => {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-center border-t pt-4">
-              <Button variant="outline" className="w-full">
-                Edit Profile
-              </Button>
-            </CardFooter>
           </Card>
           <div className="md:col-span-2">
             <Tabs
@@ -215,6 +277,7 @@ const ProfilePage = () => {
                 <TabsTrigger value="security">Security</TabsTrigger>
                 <TabsTrigger value="preferences">Preferences</TabsTrigger>
               </TabsList>
+              {/* Profile Details Tab */}
               <TabsContent value="profile" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -271,20 +334,13 @@ const ProfilePage = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        placeholder="Tell us a little about yourself"
-                        className="min-h-[100px]"
-                      />
-                    </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end border-t pt-4">
+                  <CardFooter className="flex justify-end pt-[50px]">
                     <Button>Save Changes</Button>
                   </CardFooter>
                 </Card>
               </TabsContent>
+              {/* Security Tab */}
               <TabsContent value="security" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -307,7 +363,10 @@ const ProfilePage = () => {
                             </p>
                           </div>
                         </div>
-                        <Button variant="outline">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowTwoFADialog(true)}
+                        >
                           {profileData.twoFactorEnabled ? "Manage" : "Enable"}
                         </Button>
                       </div>
@@ -321,7 +380,12 @@ const ProfilePage = () => {
                             </p>
                           </div>
                         </div>
-                        <Button variant="outline">View History</Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowLoginHistoryDialog(true)}
+                        >
+                          View History
+                        </Button>
                       </div>
                       <div className="flex justify-between items-center p-4 border rounded-lg">
                         <div className="flex items-start space-x-3">
@@ -333,12 +397,18 @@ const ProfilePage = () => {
                             </p>
                           </div>
                         </div>
-                        <Button variant="outline">Change Password</Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowChangePasswordDialog(true)}
+                        >
+                          Change Password
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
+              {/* Preferences Tab */}
               <TabsContent value="preferences" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -356,7 +426,12 @@ const ProfilePage = () => {
                             Receive updates and alerts via email
                           </p>
                         </div>
-                        <Button variant="outline">Configure</Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowConfigureEmailDialog(true)}
+                        >
+                          Configure
+                        </Button>
                       </div>
                       <div className="flex justify-between items-center p-4 border rounded-lg">
                         <div>
@@ -365,7 +440,12 @@ const ProfilePage = () => {
                             Get important alerts via text message
                           </p>
                         </div>
-                        <Button variant="outline">Configure</Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowConfigureSMSDialog(true)}
+                        >
+                          Configure
+                        </Button>
                       </div>
                       <div className="flex justify-between items-center p-4 border rounded-lg">
                         <div>
@@ -374,7 +454,14 @@ const ProfilePage = () => {
                             Control push notifications on your devices
                           </p>
                         </div>
-                        <Button variant="outline">Configure</Button>
+                        <Button
+                          variant="outline"
+                          onClick={() =>
+                            setShowConfigureAppNotificationsDialog(true)
+                          }
+                        >
+                          Configure
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -383,12 +470,14 @@ const ProfilePage = () => {
             </Tabs>
           </div>
         </div>
+
+        {/* Dialogs for Send, Receive, and Transaction Success */}
         <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Send Money</DialogTitle>
               <DialogDescription>
-                Transfer DUAL to another account securely
+                Transfer CBDC to another account securely
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -416,7 +505,7 @@ const ProfilePage = () => {
                       <SelectValue placeholder="Currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dual">DUAL</SelectItem>
+                      <SelectItem value="dual">CBDC</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -458,6 +547,7 @@ const ProfilePage = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
         <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -506,7 +596,7 @@ const ProfilePage = () => {
                       <SelectValue placeholder="Currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dual">DUAL</SelectItem>
+                      <SelectItem value="dual">CBDC</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -544,6 +634,7 @@ const ProfilePage = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
         <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
           <DialogContent className="sm:max-w-[400px]">
             <DialogHeader>
@@ -560,7 +651,7 @@ const ProfilePage = () => {
               <div className="bg-muted p-4 rounded-lg w-full space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount:</span>
-                  <span className="font-medium">{sendAmount || "0"} DUAL</span>
+                  <span className="font-medium">{sendAmount || "0"} CBDC</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Recipient:</span>
@@ -590,6 +681,378 @@ const ProfilePage = () => {
               >
                 Close
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Additional Dialogs for Demo Editing */}
+
+        {/* Edit Profile Dialog */}
+        <Dialog
+          open={showEditProfileDialog}
+          onOpenChange={setShowEditProfileDialog}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+              <DialogDescription>
+                Update your profile information below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="editFullName">Full Name</Label>
+                <Input id="editFullName" defaultValue={profileData.name} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editEmail">Email Address</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  defaultValue={profileData.email}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editPhone">Phone Number</Label>
+                <Input id="editPhone" defaultValue={profileData.phone} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editAddress">Address</Label>
+                <Input id="editAddress" defaultValue={profileData.address} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editBio">Bio</Label>
+                <Textarea
+                  id="editBio"
+                  placeholder="Tell us a little about yourself"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowEditProfileDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  // For demo, just close dialog
+                  // You could also store changes in localStorage if desired
+                  setShowEditProfileDialog(false);
+                }}
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Two-Factor Authentication Dialog */}
+        <Dialog open={showTwoFADialog} onOpenChange={setShowTwoFADialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Two-Factor Authentication</DialogTitle>
+              <DialogDescription>
+                {profileData.twoFactorEnabled
+                  ? "Manage your two-factor authentication settings."
+                  : "Enable two-factor authentication for added security."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {profileData.twoFactorEnabled ? (
+                <div>
+                  <p>Two-Factor Authentication is currently enabled.</p>
+                  <Button
+                    onClick={() => {
+                      // For demo only
+                      console.log("2FA disabled (demo)");
+                      setShowTwoFADialog(false);
+                    }}
+                  >
+                    Disable 2FA
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <p>Two-Factor Authentication is currently disabled.</p>
+                  <Button
+                    onClick={() => {
+                      // For demo only
+                      console.log("2FA enabled (demo)");
+                      setShowTwoFADialog(false);
+                    }}
+                  >
+                    Enable 2FA
+                  </Button>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowTwoFADialog(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Login History Dialog */}
+        <Dialog
+          open={showLoginHistoryDialog}
+          onOpenChange={setShowLoginHistoryDialog}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Login History</DialogTitle>
+              <DialogDescription>
+                View your recent login activities.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <ul className="list-disc pl-5">
+                <li>
+                  {new Date().toLocaleString()} - Successful login from IP
+                  192.168.1.1
+                </li>
+                <li>
+                  {new Date().toLocaleString()} - Successful login from IP
+                  192.168.1.2
+                </li>
+              </ul>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowLoginHistoryDialog(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Password Dialog */}
+        <Dialog
+          open={showChangePasswordDialog}
+          onOpenChange={setShowChangePasswordDialog}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+              <DialogDescription>
+                Update your account password.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowChangePasswordDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  // For demo only
+                  console.log("Password changed (demo)");
+                  setShowChangePasswordDialog(false);
+                }}
+              >
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Configure Email Notifications Dialog */}
+        <Dialog
+          open={showConfigureEmailDialog}
+          onOpenChange={setShowConfigureEmailDialog}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Email Notifications</DialogTitle>
+              <DialogDescription>
+                Configure your email notification preferences.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-3">
+                {/* Newsletter */}
+                <div className="flex items-center">
+                  <Input
+                    type="checkbox"
+                    id="newsletter"
+                    className="h-4 w-4 mr-2"
+                    checked={emailSettings.newsletter}
+                    onChange={(e) =>
+                      setEmailSettings({
+                        ...emailSettings,
+                        newsletter: e.target.checked,
+                      })
+                    }
+                  />
+                  <Label htmlFor="newsletter" className="text-sm">
+                    Newsletter
+                  </Label>
+                </div>
+                {/* Security Alerts */}
+                <div className="flex items-center">
+                  <Input
+                    type="checkbox"
+                    id="alerts"
+                    className="h-4 w-4 mr-2"
+                    checked={emailSettings.securityAlerts}
+                    onChange={(e) =>
+                      setEmailSettings({
+                        ...emailSettings,
+                        securityAlerts: e.target.checked,
+                      })
+                    }
+                  />
+                  <Label htmlFor="alerts" className="text-sm">
+                    Security Alerts
+                  </Label>
+                </div>
+                {/* Product Updates */}
+                <div className="flex items-center">
+                  <Input
+                    type="checkbox"
+                    id="updates"
+                    className="h-4 w-4 mr-2"
+                    checked={emailSettings.productUpdates}
+                    onChange={(e) =>
+                      setEmailSettings({
+                        ...emailSettings,
+                        productUpdates: e.target.checked,
+                      })
+                    }
+                  />
+                  <Label htmlFor="updates" className="text-sm">
+                    Product Updates
+                  </Label>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowConfigureEmailDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEmailSettings}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Configure SMS Notifications Dialog */}
+        <Dialog
+          open={showConfigureSMSDialog}
+          onOpenChange={setShowConfigureSMSDialog}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>SMS Notifications</DialogTitle>
+              <DialogDescription>
+                Configure your SMS notification preferences.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex items-center">
+                <Input
+                  type="checkbox"
+                  id="smsAlerts"
+                  className="h-4 w-4 mr-2"
+                  checked={smsSettings.receiveSMSAlerts}
+                  onChange={(e) =>
+                    setSmsSettings({
+                      ...smsSettings,
+                      receiveSMSAlerts: e.target.checked,
+                    })
+                  }
+                />
+                <Label htmlFor="smsAlerts" className="text-sm">
+                  Receive SMS Alerts
+                </Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowConfigureSMSDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveSMSSettings}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Configure App Notifications Dialog */}
+        <Dialog
+          open={showConfigureAppNotificationsDialog}
+          onOpenChange={setShowConfigureAppNotificationsDialog}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>App Notifications</DialogTitle>
+              <DialogDescription>
+                Configure your app push notification preferences.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex items-center">
+                <Input
+                  type="checkbox"
+                  id="pushNotifications"
+                  className="h-4 w-4 mr-2"
+                  checked={appSettings.enablePushNotifications}
+                  onChange={(e) =>
+                    setAppSettings({
+                      ...appSettings,
+                      enablePushNotifications: e.target.checked,
+                    })
+                  }
+                />
+                <Label htmlFor="pushNotifications" className="text-sm">
+                  Enable Push Notifications
+                </Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowConfigureAppNotificationsDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveAppSettings}>Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

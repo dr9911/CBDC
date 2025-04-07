@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Banknote,
   Calendar,
@@ -17,14 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -42,20 +34,22 @@ interface MintNewSupplyProps {
 }
 
 const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
-  //
   // ----------------------------------------------------------------
-  // 1) FORM STATES AND HANDLERS (FROM THE NEW SNIPPET)
+  // 1) FORM STATES AND HANDLERS
   // ----------------------------------------------------------------
-  const userData = usersData.find(
-    (user) => user.id === "system"
-  );
+  const userData = usersData.find((user) => user.id === "system");
   const [name, setName] = useState<string>("");
   const [currency, setCurrency] = useState<string>("");
   const [numTokens, setNumTokens] = useState<string>("");
-  const [issuingPrice, setIssuingPrice] = useState<string>("");
-  const [purpose, setPurpose] = useState<string>("");
-  const [documentDate, setDocumentDate] = useState<string>("27.02.2025");
+  // Removed issuingPrice state since that section is deleted
+  const [purpose, setPurpose] = useState<string>(""); // will be used as "Remark"
+  // Updated default date to proper ISO format for type="date"
+  const [documentDate, setDocumentDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
   const [supply, setSupply] = useState<number>(userData?.totalMinted || 0);
+
+  const documentDateRef = useRef<HTMLInputElement>(null);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
@@ -70,10 +64,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
     setNumTokens(value);
   };
 
-  const handleIssuingPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9.]/g, "");
-    setIssuingPrice(value);
-  };
+  // Removed handleIssuingPriceChange since issuing price section is deleted
 
   const handlePurposeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPurpose(e.target.value);
@@ -83,60 +74,51 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
     setDocumentDate(e.target.value);
   };
 
-  //
   // ----------------------------------------------------------------
-  // 2) DIALOG STATES & METHODS (EXACTLY FROM OLDER SNIPPET)
+  // 2) DIALOG STATES & METHODS
   // ----------------------------------------------------------------
   const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
   const [showMfaDialog, setShowMfaDialog] = useState<boolean>(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
   const [mfaCode, setMfaCode] = useState<string>("");
 
-  // "Proceed to Verification" => opens Confirm dialog
   const handleSubmit = () => {
     setShowConfirmDialog(true);
   };
 
-  // "Confirm Minting Operation" => close confirm, open MFA
   const handleConfirmMinting = () => {
     setShowConfirmDialog(false);
     setShowMfaDialog(true);
     setTimeout(() => {
-      setSupply(prevSupply => prevSupply + parseInt(numTokens, 10));
-    }, 60000);  
+      setSupply((prevSupply) => prevSupply + parseInt(numTokens, 10));
+    }, 60000);
   };
 
-  // Once MFA verifies => show success
   const handleVerifyMfa = () => {
-    // In real life: verify MFA code
     setShowMfaDialog(false);
     setShowSuccessDialog(true);
   };
 
-  // On success close => reset form
   const handleCloseSuccess = () => {
     setShowSuccessDialog(false);
     setName("");
     setCurrency("");
     setNumTokens("");
-    setIssuingPrice("");
+    // Removed issuingPrice reset
     setPurpose("");
-    setDocumentDate("27.02.2025");
+    setDocumentDate("2025-02-27");
     setMfaCode("");
   };
 
-  // Only allow numeric 6-digit codes
   const handleMfaCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
     setMfaCode(value);
   };
 
-  // Validation
-  const isFormValid =
-    name && currency && numTokens && issuingPrice && purpose && documentDate;
+  // Updated validation: removed issuingPrice condition
+  const isFormValid = name && currency && numTokens && purpose && documentDate;
   const isMfaValid = mfaCode.length === 6;
 
-  //
   // ----------------------------------------------------------------
   // 3) RENDER
   // ----------------------------------------------------------------
@@ -146,9 +128,6 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         {/* Page Heading */}
         <div>
           <h1 className="text-3xl font-bold">Mint New CBDC Supply</h1>
-          {/* <p className="text-muted-foreground mt-1">
-            Create new digital currency with secure multi-factor authentication
-          </p> */}
         </div>
 
         {/* Card: Total Supply */}
@@ -171,7 +150,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
           </CardContent>
         </Card>
 
-        {/* Minting Form (from new snippet) */}
+        {/* Minting Form */}
         <Card>
           <CardHeader>
             <CardTitle>Mint New Digital Currency</CardTitle>
@@ -187,27 +166,18 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                   id="name"
                   value={name}
                   onChange={handleNameChange}
-                  placeholder="Eco-System Test Batch 1"
+                  className="max-w-xs"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency</Label>
-                <Select value={currency} onValueChange={handleCurrencyChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="PGK - Papua New Guinean Kina" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pgk">
-                      PGK - Papua New Guinean Kina
-                    </SelectItem>
-                    <SelectItem value="usd">
-                      USD - United States Dollar
-                    </SelectItem>
-                    <SelectItem value="eur">EUR - Euro</SelectItem>
-                    <SelectItem value="gbp">GBP - British Pound</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="currency"
+                  value={currency}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
+                  className="max-w-xs"
+                />
               </div>
 
               <div className="space-y-2">
@@ -216,43 +186,20 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                   id="num-tokens"
                   value={numTokens}
                   onChange={handleNumTokensChange}
-                  placeholder="1,000,000"
+                  className="max-w-xs"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="issuing-price">Issuing price</Label>
-                <div className="flex gap-2 w-[180px]">
-                  <Select defaultValue="pgk">
-                    <SelectTrigger>
-                      <SelectValue placeholder="PGK" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pgk">PGK - Papua New</SelectItem>
-                      <SelectItem value="usd">USD - US Dollar</SelectItem>
-                      <SelectItem value="eur">EUR - Euro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    id="issuing-price"
-                    value={issuingPrice}
-                    onChange={handleIssuingPriceChange}
-                    placeholder="1.00"
-                    className="flex-1 min-w-[200px]"
-                  />
-                </div>
-              </div>
+              {/* Issuing Price block removed */}
 
               <div className="mt-6">
-                <h3 className="text-md font-medium mb-4">Properties</h3>
-
                 <div className="space-y-2">
-                  <Label htmlFor="purpose">Purpose</Label>
+                  <Label htmlFor="remark">Remark</Label>
                   <Input
-                    id="purpose"
+                    id="remark"
                     value={purpose}
                     onChange={handlePurposeChange}
-                    placeholder="Enter purpose"
+                    className="max-w-xs"
                   />
                 </div>
 
@@ -261,19 +208,12 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                   <div className="relative">
                     <Input
                       id="document-date"
-                      type="text"
+                      type="date"
+                      ref={documentDateRef}
                       value={documentDate}
                       onChange={handleDocumentDateChange}
-                      placeholder="27.02.2025"
+                      className="w-[140px]"
                     />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      type="button"
-                    >
-                      <Calendar className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -288,9 +228,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         </Card>
       </div>
 
-      {/* ----------------------------------------- */}
-      {/* (A) CONFIRMATION DIALOG (OLDER VERSION)  */}
-      {/* ----------------------------------------- */}
+      {/* CONFIRMATION DIALOG */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
@@ -301,7 +239,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="bg-muted p-4 rounded-lg space-y-2">
+            <div className="bg-muted p-4 rounded-lg space-y-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Name:</span>
                 <span className="font-medium">{name}</span>
@@ -319,14 +257,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Issuing Price:</span>
-                <span className="font-medium">
-                  {currency ? currency.toUpperCase() : ""}{" "}
-                  {issuingPrice ? Number(issuingPrice).toFixed(2) : "0.00"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Purpose:</span>
+                <span className="text-muted-foreground">Remark:</span>
                 <span className="font-medium">{purpose}</span>
               </div>
               <div className="flex justify-between">
@@ -367,9 +298,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* ----------------------------------------- */}
-      {/* (B) MFA DIALOG (OLDER VERSION)           */}
-      {/* ----------------------------------------- */}
+      {/* MFA DIALOG */}
       <Dialog open={showMfaDialog} onOpenChange={setShowMfaDialog}>
         <DialogContent>
           <DialogHeader>
@@ -394,7 +323,6 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                   value={mfaCode}
                   onChange={handleMfaCodeChange}
                   maxLength={6}
-                  placeholder="000000"
                   className="text-center text-xl tracking-widest"
                 />
               </div>
@@ -411,9 +339,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* ----------------------------------------- */}
-      {/* (C) SUCCESS DIALOG (OLDER VERSION)       */}
-      {/* ----------------------------------------- */}
+      {/* SUCCESS DIALOG */}
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <DialogContent>
           <DialogHeader>
@@ -440,27 +366,11 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
               </div>
               <div className="bg-muted p-4 rounded-lg w-full space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status:</span>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-100 text-amber-800 hover:bg-amber-100"
-                  >
-                    Awaiting Approvals (1/3)
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
                   <span className="text-muted-foreground">
                     Number of Tokens:
                   </span>
                   <span className="font-medium">
                     {numTokens ? Number(numTokens).toLocaleString() : "0"} CBDC
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Issuing Price:</span>
-                  <span className="font-medium">
-                    {currency ? currency.toUpperCase() : "XXX"}{" "}
-                    {issuingPrice ? Number(issuingPrice).toFixed(2) : "0.00"}
                   </span>
                 </div>
               </div>
