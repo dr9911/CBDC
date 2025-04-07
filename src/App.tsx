@@ -8,14 +8,9 @@ import routes from "tempo-routes";
 import userData from "@/data/users.json";
 
 // Lazy load components
-const CBDCDashboard = lazy(() => import("./components/cbdc/CBDCDashboard"));
 const MintNewSupply = lazy(() => import("./components/minting/MintNewSupply"));
 const AccountsPage = lazy(() => import("./components/accounts/AccountsPage"));
 const ProfilePage = lazy(() => import("./components/profile/ProfilePage"));
-const UserManagement = lazy(() => import("./components/auth/UserManagement"));
-const UserDocumentation = lazy(
-  () => import("./components/auth/UserDocumentation"),
-);
 const HistoryPage = lazy(() => import("./components/history/HistoryPage"));
 
 function App() {
@@ -47,15 +42,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <HistoryPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/cbdc"
-            element={
-              <ProtectedRoute requiredRole="central_bank">
-                <CBDCDashboard />
               </ProtectedRoute>
             }
           />
@@ -94,25 +80,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Admin routes */}
-          <Route
-            path="/user-management"
-            element={
-              <ProtectedRoute requiredRole="central_bank">
-                <UserManagement />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/user-documentation"
-            element={
-              <ProtectedRoute requiredRole="central_bank">
-                <UserDocumentation />
               </ProtectedRoute>
             }
           />

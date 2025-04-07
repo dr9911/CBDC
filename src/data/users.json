@@ -6,7 +6,7 @@
     "name": "Central Bank User 1",
     "email": "admin@centralbank.gov",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=CBUser1",
-    "lastLogin": "2023-09-15T14:30:00Z"
+    "lastLogin": "2025-04-01T08:30:00Z"
   },
   {
     "id": "cb-002",
@@ -15,7 +15,7 @@
     "name": "Central Bank User 2",
     "email": "admin@centralbank.gov",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=CBUser2",
-    "lastLogin": "2023-09-15T14:45:00Z"
+    "lastLogin": "2025-04-02T09:45:00Z"
   },
   {
     "id": "cb-003",
@@ -24,7 +24,7 @@
     "name": "Central Bank User 3",
     "email": "admin@centralbank.gov",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=CBUser3",
-    "lastLogin": "2023-09-15T15:00:00Z"
+    "lastLogin": "2025-04-03T10:00:00Z"
   },
   {
     "id": "system",
@@ -40,7 +40,7 @@
     "balance": 50000,
     "email": "admin@firstnational.com",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=FirstNational",
-    "lastLogin": "2023-09-14T09:15:00Z"
+    "lastLogin": "2025-04-01T11:15:00Z"
   },
   {
     "id": "cmb-002",
@@ -50,7 +50,7 @@
     "balance": 40000,
     "email": "admin@secondnational.com",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=SecondNational",
-    "lastLogin": "2023-09-14T09:30:00Z"
+    "lastLogin": "2025-04-02T11:30:00Z"
   },
   {
     "id": "usr-001",
@@ -60,7 +60,7 @@
     "balance": 1440,
     "email": "florian.doe@example.com",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Florian",
-    "lastLogin": "2023-09-16T10:45:00Z"
+    "lastLogin": "2025-04-03T10:45:00Z"
   },
   {
     "id": "usr-002",
@@ -70,7 +70,7 @@
     "balance": 2000,
     "email": "stefan.doe@example.com",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Stefan",
-    "lastLogin": "2023-09-16T11:00:00Z"
+    "lastLogin": "2025-04-04T11:00:00Z"
   },
   {
     "id": "usr-003",
@@ -80,6 +80,6 @@
     "balance": 500,
     "email": "robert.doe@example.com",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Robert",
-    "lastLogin": "2023-09-16T11:15:00Z"
+    "lastLogin": "2025-04-05T11:15:00Z"
   }
 ]
