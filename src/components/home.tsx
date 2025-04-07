@@ -99,13 +99,15 @@ const Home = ({
                   <div>
                     <BalanceCard balance={user?.balance || 0} />
                   </div>
-                  <div>
-                    <AssetsCard
-                      stocks={100000}
-                      bonds={50000}
-                      securities={25000}
-                    />
-                  </div>
+                  {userRole === "user" && (
+                    <div>
+                      <AssetsCard
+                        stocks={100000}
+                        bonds={50000}
+                        securities={25000}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <motion.div
