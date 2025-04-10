@@ -4,6 +4,7 @@ export interface User {
   id: string;
   username: string;
   passwordHash: string;
+  balance: number;
   role: UserRole;
   name: string;
   email: string;
