@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Notification from "../profile/Notifications";
 
 interface HeaderProps {
   userName?: string;
@@ -140,57 +141,7 @@ const Header = ({
             )}
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {notificationCount}
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="max-h-[300px] overflow-auto">
-              <DropdownMenuItem className="cursor-pointer">
-                <div className="flex flex-col space-y-1">
-                  <p className="font-medium">Transaction Completed</p>
-                  <p className="text-xs text-muted-foreground">
-                    Your transfer of 250 CBDC was successful
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    10 minutes ago
-                  </p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <div className="flex flex-col space-y-1">
-                  <p className="font-medium">Security Alert</p>
-                  <p className="text-xs text-muted-foreground">
-                    New login detected from New York, USA
-                  </p>
-                  <p className="text-xs text-muted-foreground">1 hour ago</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <div className="flex flex-col space-y-1">
-                  <p className="font-medium">Account Update</p>
-                  <p className="text-xs text-muted-foreground">
-                    Your profile information has been updated
-                  </p>
-                  <p className="text-xs text-muted-foreground">Yesterday</p>
-                </div>
-              </DropdownMenuItem>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-center text-primary">
-              View All Notifications
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Notification />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
