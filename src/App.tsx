@@ -12,6 +12,7 @@ const MintNewSupply = lazy(() => import("./components/minting/MintNewSupply"));
 const AccountsPage = lazy(() => import("./components/accounts/AccountsPage"));
 const ProfilePage = lazy(() => import("./components/profile/ProfilePage"));
 const HistoryPage = lazy(() => import("./components/history/HistoryPage"));
+const MintApproval = lazy(() => import("./components/minting/MintApproval"));
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -52,6 +53,15 @@ function App() {
             element={
               <ProtectedRoute requiredRole="central_bank">
                 <MintNewSupply />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mint/approval"
+            element={
+              <ProtectedRoute requiredRole="central_bank">
+                <MintApproval />
               </ProtectedRoute>
             }
           />

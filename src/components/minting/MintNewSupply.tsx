@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Banknote, Calendar, AlertTriangle, CheckCircle2, Key } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
     // 1) FORM STATES AND HANDLERS
     // ----------------------------------------------------------------
     const { currentUser } = useAuth();
-    const userData = usersData.find((user) => user.id === 'system');
+
     const [name, setName] = useState<string>('');
     const [currency, setCurrency] = useState<string>('');
     const [numTokens, setNumTokens] = useState<string>('');
@@ -28,9 +28,31 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
     const [purpose, setPurpose] = useState<string>(''); // will be used as "Remark"
     // Updated default date to proper ISO format for type="date"
     const [documentDate, setDocumentDate] = useState<string>(new Date().toISOString().split('T')[0]);
-    const [supply, setSupply] = useState<number>(userData?.totalMinted || 0);
+    const [supply, setSupply] = useState<number>(0);
 
     const documentDateRef = useRef<HTMLInputElement>(null);
+     
+    useEffect(() => {
+        const fetchSupply = async () => {
+            console.log('Fetching supply from database...');
+            const { data, error } = await supabase
+                .from('TokenSupply')
+                .select('total_minted')
+
+            if (error) {
+                console.error('Error fetching supply:', error);
+                return;
+            }
+
+            if (data) {
+                setSupply(data[0].total_minted || 0);
+            }
+        };
+
+        fetchSupply();
+    }
+    , []);
+
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setName(e.target.value);
@@ -103,11 +125,12 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         if (users && mintData) {
             users.forEach(async (user) => {
                 console.log('Sending notification to user:', user.id);
+                console.log('Sending mint event id:', mintData[0]?.id);
                 const { error: notificationError } = await supabase.from('Notifications').insert({
                     user_id: user.id,
                     message: `New minting request for ${numTokens} tokens`,
                     type: 'minting_request',
-                    mint_event_id: mintData.id,
+                    mint_event_id: mintData[0]?.id || '',
                 });
                 if (notificationError) {
                     console.error('Error inserting notification:', notificationError);
