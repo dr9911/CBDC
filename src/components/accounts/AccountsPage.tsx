@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 import {
   CreditCard,
   ArrowUpRight,
@@ -30,14 +31,17 @@ const AccountsPage = ({
   userName = "John Doe",
   userAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
 }: AccountsPageProps) => {
+
+  const { currentUser } = useAuth();
+  const userBalance = currentUser?.balance || 0;
   // Sample account data
   const accounts = [
     {
       id: "acc-001",
-      name: "Main DUAL Account",
+      name: "Main CBDC Account",
       number: "DUAL-1234-5678-9012",
-      balance: 25750.85,
-      currency: "DUAL",
+      balance: userBalance,
+      currency: "CBDC",
       type: "Digital Currency",
       status: "active",
       lastActivity: "Today, 10:45 AM",
@@ -46,9 +50,9 @@ const AccountsPage = ({
     {
       id: "acc-002",
       name: "Savings Account",
-      number: "DUAL-2345-6789-0123",
+      number: "CBDC-2345-6789-0123",
       balance: 15250.5,
-      currency: "DUAL",
+      currency: "CBDC",
       type: "Savings",
       status: "active",
       lastActivity: "Yesterday, 3:20 PM",
@@ -57,13 +61,13 @@ const AccountsPage = ({
     {
       id: "acc-003",
       name: "Business Account",
-      number: "DUAL-3456-7890-1234",
+      number: "CBDC-3456-7890-1234",
       balance: 42680.25,
-      currency: "DUAL",
+      currency: "CBDC",
       type: "Business",
       status: "active",
       lastActivity: "2 days ago, 11:15 AM",
-      created: "Jun 10, 2023",
+      created: "Jun 10, 2024",
     },
   ];
 
@@ -71,11 +75,11 @@ const AccountsPage = ({
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "EUR",
       minimumFractionDigits: 2,
     })
       .format(amount)
-      .replace("$", "");
+      .replace("€", "");
   };
 
   return (

@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Notification from "../profile/Notifications";
+import TrustNoteDLogo2 from "../../../public/logos/TND2.png";
 
 interface HeaderProps {
   userName?: string;

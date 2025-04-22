@@ -1,3 +1,4 @@
+// src/components/navigation/MobileMenu.tsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -9,6 +10,8 @@ import {
   Banknote,
   Menu,
   X,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +28,7 @@ const MobileMenu = ({ activePage = "dashboard" }: MobileMenuProps) => {
   const navigate = useNavigate();
   const userRole = currentUser?.role || "user";
   const [open, setOpen] = React.useState(false);
+  const [liabilitiesOpen, setLiabilitiesOpen] = React.useState(false);
 
   const handleLogout = () => {
     logout();
@@ -32,7 +36,7 @@ const MobileMenu = ({ activePage = "dashboard" }: MobileMenuProps) => {
     setOpen(false);
   };
 
-  // Base menu items for all users
+  // Base menu items for all users, now with a "liabilities" dropdown
   const baseMenuItems = [
     {
       id: "dashboard",
@@ -42,11 +46,30 @@ const MobileMenu = ({ activePage = "dashboard" }: MobileMenuProps) => {
       roles: ["user", "commercial_bank", "central_bank"],
     },
     {
-      id: "mint",
-      label: "Mint New Supply",
+      id: "accounts",
+      label: "Accounts",
+      icon: <CreditCard size={20} />,
+      path: "/accounts",
+      roles: ["user", "commercial_bank", "central_bank"],
+    },
+    {
+      id: "liabilities",
+      label: "Liabilities",
       icon: <Banknote size={20} />,
       path: "/mint",
       roles: ["central_bank"],
+      isDropdown: true,
+      isOpen: liabilitiesOpen,
+      toggle: () => setLiabilitiesOpen(!liabilitiesOpen),
+      submenu: [
+        {
+          id: "mint",
+          label: "Mint New Supply",
+          icon: <Banknote size={20} />,
+          path: "/mint",
+          roles: ["central_bank"],
+        },
+      ],
     },
     {
       id: "history",
@@ -64,9 +87,9 @@ const MobileMenu = ({ activePage = "dashboard" }: MobileMenuProps) => {
     },
   ];
 
-  // Filter menu items based on user role
+  // Filter based on the logged‑in user's role
   const menuItems = baseMenuItems.filter((item) =>
-    item.roles.includes(userRole),
+    item.roles.includes(userRole)
   );
 
   return (
@@ -79,11 +102,14 @@ const MobileMenu = ({ activePage = "dashboard" }: MobileMenuProps) => {
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-[280px]">
           <div className="h-full w-full bg-background border-r border-border flex flex-col p-4 overflow-y-auto">
-            {/* Logo and branding */}
+            {/* Logo & close */}
             <div className="flex items-center justify-between mb-8 px-2">
               <div className="flex items-center">
                 <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center mr-3">
-                  <CreditCard className="text-primary-foreground" size={20} />
+                  <CreditCard
+                    className="text-primary-foreground"
+                    size={20}
+                  />
                 </div>
                 <div>
                   <h1 className="font-bold text-xl">TND Platform</h1>
@@ -101,42 +127,93 @@ const MobileMenu = ({ activePage = "dashboard" }: MobileMenuProps) => {
               </Button>
             </div>
 
-            {/* User role indicator */}
+            {/* Role badge */}
             <div className="mb-4 px-2">
               <Badge variant="outline" className="w-full justify-center py-1">
                 {userRole === "central_bank"
                   ? "Central Bank Access"
                   : userRole === "commercial_bank"
-                    ? "Commercial Bank Access"
-                    : "User Access"}
+                  ? "Commercial Bank Access"
+                  : "User Access"}
               </Badge>
             </div>
 
-            {/* Main navigation */}
+            {/* Nav items (flat links + dropdown) */}
             <nav className="space-y-1 mb-6">
               {menuItems.map((item) => (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  onClick={() => setOpen(false)}
-                >
-                  <Button
-                    variant={activePage === item.id ? "secondary" : "ghost"}
-                    className={`w-full justify-start ${activePage === item.id ? "font-medium" : ""}`}
-                  >
-                    <span className="mr-3">{item.icon}</span>
-                    {item.label}
-                  </Button>
-                </Link>
+                <React.Fragment key={item.id}>
+                  {item.isDropdown ? (
+                    <div className="space-y-1">
+                      <Button
+                        variant={
+                          activePage === item.id ||
+                          item.submenu?.some((sub) => activePage === sub.id)
+                            ? "secondary"
+                            : "ghost"
+                        }
+                        className={`w-full justify-between ${
+                          activePage === item.id ? "font-medium" : ""
+                        }`}
+                        onClick={item.toggle}
+                      >
+                        <span className="flex items-center">
+                          <span className="mr-3">{item.icon}</span>
+                          {item.label}
+                        </span>
+                        {item.isOpen ? (
+                          <ChevronDown size={16} />
+                        ) : (
+                          <ChevronRight size={16} />
+                        )}
+                      </Button>
+                      {item.isOpen && (
+                        <div className="pl-6 space-y-1">
+                          {item.submenu!.map((sub) => (
+                            <Link
+                              key={sub.id}
+                              to={sub.path}
+                              onClick={() => setOpen(false)}
+                            >
+                              <Button
+                                variant={
+                                  activePage === sub.id
+                                    ? "secondary"
+                                    : "ghost"
+                                }
+                                className={`w-full justify-start text-sm ${
+                                  activePage === sub.id ? "font-medium" : ""
+                                }`}
+                              >
+                                <span className="mr-2">{sub.icon}</span>
+                                {sub.label}
+                              </Button>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link to={item.path} onClick={() => setOpen(false)}>
+                      <Button
+                        variant={activePage === item.id ? "secondary" : "ghost"}
+                        className={`w-full justify-start ${
+                          activePage === item.id ? "font-medium" : ""
+                        }`}
+                      >
+                        <span className="mr-3">{item.icon}</span>
+                        {item.label}
+                      </Button>
+                    </Link>
+                  )}
+                </React.Fragment>
               ))}
             </nav>
 
             <Separator className="my-4" />
 
-            {/* Spacer to push logout to bottom */}
+            {/* Push logout to bottom */}
             <div className="flex-grow" />
 
-            {/* Logout button */}
             <Button
               variant="outline"
               className="w-full justify-start mt-auto"
