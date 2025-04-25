@@ -28,6 +28,9 @@ export interface Transaction {
     timestamp: string; // ISO 8601 format string
     status: 'completed' | 'pending' | 'failed';
     type: 'user_to_user' | 'bank_to_user' | 'user_to_bank' | 'mint'; // Add more as needed
+    receiverName?: {
+        name: string; // Assuming receiverName is an object with a name property
+    };
 }
 
 // --- Updated Props Interface ---
@@ -60,7 +63,6 @@ const TransactionList = ({
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
     const getTransactionDirection = (transaction: Transaction): 'incoming' | 'outgoing' | 'internal' | 'unknown' => {
-        console.log('Transaction:', transaction);
         if (!transaction.sender || !transaction.receiver) return 'unknown';
         if (!currentUserId) return 'unknown';
         if (transaction.sender === currentUserId && transaction.receiver === currentUserId) return 'internal';
@@ -240,9 +242,9 @@ const TransactionList = ({
                             <div className="col-span-2 md:col-span-2">Direction</div>
                             <div className="col-span-3 md:col-span-3 text-right">Amount</div>
                             {/* Renamed Recipient to Counterparty */}
-                            <div className="hidden md:block md:col-span-2">Counterparty</div>
+                            <div className="hidden md:block md:col-span-2">Receiver</div>
                             <div className="col-span-2 md:col-span-1 text-center">Status</div>
-                            <div className="col-span-2 md:col-span-1 text-right">Actions</div>
+                            {/* <div className="col-span-2 md:col-span-1 text-right">Actions</div> */}
                         </div>
 
                         {/* Transaction Rows */}
@@ -297,9 +299,9 @@ const TransactionList = ({
                                                 </span>
                                             </div>
                                             {/* Counterparty */}
-                                            <div className="hidden md:block md:col-span-2 truncate" title={counterpartyId}>
+                                            <div className="hidden md:block md:col-span-2 truncate" title={transaction?.receiverName?.name}>
                                                 {/* {counterpartyDisplay} Using ID for now */}
-                                                {counterpartyId}
+                                                {transaction?.receiverName?.name}
                                             </div>
                                             {/* Status */}
                                             <div className="col-span-2 md:col-span-1 text-center">
@@ -308,7 +310,7 @@ const TransactionList = ({
                                                 </Badge>
                                             </div>
                                             {/* Actions */}
-                                            <div className="col-span-2 md:col-span-1 text-right">
+                                            {/* <div className="col-span-2 md:col-span-1 text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -327,7 +329,7 @@ const TransactionList = ({
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                            </div>
+                                            </div> */}
                                         </motion.div>
                                     );
                                 })}

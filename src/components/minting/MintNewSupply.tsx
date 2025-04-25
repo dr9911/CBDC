@@ -29,15 +29,14 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
     // Updated default date to proper ISO format for type="date"
     const [documentDate, setDocumentDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [supply, setSupply] = useState<number>(0);
+    const [mintId, setMintId] = useState<string>('');
 
     const documentDateRef = useRef<HTMLInputElement>(null);
-     
+
     useEffect(() => {
         const fetchSupply = async () => {
             console.log('Fetching supply from database...');
-            const { data, error } = await supabase
-                .from('TokenSupply')
-                .select('total_minted')
+            const { data, error } = await supabase.from('TokenSupply').select('total_minted');
 
             if (error) {
                 console.error('Error fetching supply:', error);
@@ -50,9 +49,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         };
 
         fetchSupply();
-    }
-    , []);
-
+    }, []);
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setName(e.target.value);
@@ -92,22 +89,19 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
     const handleConfirmMinting = () => {
         setShowConfirmDialog(false);
         setShowMfaDialog(true);
-        // setTimeout(() => {
-        //   setSupply((prevSupply) => prevSupply + parseInt(numTokens, 10));
-        // }, 60000);
     };
 
     const handleVerifyMfa = async () => {
         setShowMfaDialog(false);
-        // TODO ABUD We dont show a success dialog but rather show a dialog saying this needs to be approved
-        // setShowSuccessDialog(true);
+
         const { data: mintData, error: mintError } = await supabase
-            .from('MintEvents')
+            .from('CentralBankEvents')
             .insert({
                 amount: numTokens,
                 minted_by: currentUser?.id,
                 status: 'pending',
                 note: purpose,
+                type: 'mint',
             })
             .select();
 
@@ -115,6 +109,8 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
             console.error('Error inserting mint event:', mintError);
             return;
         }
+
+        setMintId(mintData[0]?.id || '');
 
         const { data: users, error: usersError } = await supabase.from('Users').select('id').eq('role', 'central_bank').neq('id', currentUser?.id);
         if (usersError) {
@@ -130,13 +126,16 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                     user_id: user.id,
                     message: `New minting request for ${numTokens} tokens`,
                     type: 'minting_request',
-                    mint_event_id: mintData[0]?.id || '',
+                    event_id: mintData[0]?.id || '',
                 });
                 if (notificationError) {
                     console.error('Error inserting notification:', notificationError);
                 }
             });
         }
+
+        //This should be a success dialog showing that shows that the request to mint tokens have been initiated and will require approval from others
+        setShowSuccessDialog(true);
     };
 
     const handleCloseSuccess = () => {
@@ -156,7 +155,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
     };
 
     // Updated validation: removed issuingPrice condition
-    const isFormValid = name && currency && numTokens && purpose && documentDate;
+    const isFormValid = numTokens && purpose && documentDate;
     const isMfaValid = mfaCode.length === 6;
 
     // ----------------------------------------------------------------
@@ -173,7 +172,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                 {/* Card: Total Supply */}
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total CBDC Supply</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total CBDC Minted</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-end justify-between">
@@ -192,7 +191,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
-                            <div className="space-y-2">
+                            {/* <div className="space-y-2">
                                 <Label htmlFor="name">Name</Label>
                                 <Input id="name" value={name} onChange={handleNameChange} className="max-w-xs" />
                             </div>
@@ -200,7 +199,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                             <div className="space-y-2">
                                 <Label htmlFor="currency">Currency</Label>
                                 <Input id="currency" value={currency} onChange={(e) => handleCurrencyChange(e.target.value)} className="max-w-xs" />
-                            </div>
+                            </div> */}
 
                             <div className="space-y-2">
                                 <Label htmlFor="num-tokens">Number of tokens</Label>
@@ -215,7 +214,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                                     <Input id="remark" value={purpose} onChange={handlePurposeChange} className="max-w-xs" />
                                 </div>
 
-                                <div className="space-y-2 mt-4">
+                                {/* <div className="space-y-2 mt-4">
                                     <Label htmlFor="document-date">Document date</Label>
                                     <div className="relative">
                                         <Input
@@ -227,7 +226,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                                             className="w-[140px]"
                                         />
                                     </div>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
                     </CardContent>
@@ -249,14 +248,14 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="bg-muted p-4 rounded-lg space-y-4">
-                            <div className="flex justify-between">
+                            {/* <div className="flex justify-between">
                                 <span className="text-muted-foreground">Name:</span>
                                 <span className="font-medium">{name}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Currency:</span>
                                 <span className="font-medium">{currency ? currency.toUpperCase() : ''}</span>
-                            </div>
+                            </div> */}
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Number of Tokens:</span>
                                 <span className="font-medium">{numTokens ? Number(numTokens).toLocaleString() : '0'}</span>
@@ -265,10 +264,10 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                                 <span className="text-muted-foreground">Remark:</span>
                                 <span className="font-medium">{purpose}</span>
                             </div>
-                            <div className="flex justify-between">
+                            {/* <div className="flex justify-between">
                                 <span className="text-muted-foreground">Document Date:</span>
                                 <span className="font-medium">{documentDate}</span>
-                            </div>
+                            </div> */}
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Date:</span>
                                 <span className="font-medium">{new Date().toLocaleString()}</span>
@@ -335,12 +334,7 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                                 <CheckCircle2 className="h-8 w-8 text-green-600" />
                             </div>
                             <div className="text-center">
-                                <h3 className="font-medium text-lg">
-                                    Request ID: MINT-
-                                    {Math.floor(Math.random() * 1000000)
-                                        .toString()
-                                        .padStart(6, '0')}
-                                </h3>
+                                <h3 className="font-medium text-lg">Minting Request ID: {mintId}</h3>
                                 <p className="text-sm text-muted-foreground mt-1">Submitted on {new Date().toLocaleString()}</p>
                             </div>
                             <div className="bg-muted p-4 rounded-lg w-full space-y-2">

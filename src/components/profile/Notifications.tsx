@@ -13,7 +13,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/context/AuthContext';
-import MintApproval from '../minting/MintApproval';
 
 const Notification = () => {
     const navigate = useNavigate();
@@ -24,21 +23,39 @@ const Notification = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedNotification, setSelectedNotification] = useState(null);
 
-    const handleNotificationClick = (notification) => {
-        console.log('Notification clicked:', notification);
+    const handleNotificationClick = async (notification) => {
         setSelectedNotification(notification); // Set the selected notification
 
-        if (notification.type === 'minting_request') {
+        const { data, error } = await supabase.from('Notifications').update({ read: true }).eq('id', notification.id);
+        const { data: updatedNotifications, error: fetchError } = await supabase
+            .from('Notifications')
+            .select('*')
+            .eq('user_id', currentUserId)
+            .eq('read', false)
+            .order('created_at', { ascending: false });
+
+        if (fetchError) {
+            console.error('Error fetching notifications:', error);
+            return;
+        }
+        setNotifications(updatedNotifications);
+        setNotificationCount(updatedNotifications.length);
+
+        if (notification.type === 'minting_request' || notification.type === 'minting_approval') {
             // Redirect to mint approval page for minting requests
-            navigate('/mint/approval', { state: { confirmDialogOpen: true, notification } });
-            setModalOpen(true); // Open the modal instead of navigating
+            navigate('/mint/approval');
         }
         // Add more types and their respective actions if needed
     };
 
     // Fetch notifications for the current user
     const fetchNotifications = async () => {
-        const { data, error } = await supabase.from('Notifications').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false });
+        const { data, error } = await supabase
+            .from('Notifications')
+            .select('*')
+            .eq('user_id', currentUserId)
+            .eq('read', false)
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching notifications:', error);
@@ -93,18 +110,8 @@ const Notification = () => {
                     <DropdownMenuItem className="cursor-pointer text-center text-primary">View All Notifications</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Show MintApproval Modal if modalOpen is true */}
-            {/* You can add the modal display here if you decide not to navigate and want to display the modal instead */}
-            {modalOpen && selectedNotification && (
-                <MintApproval
-                    confirmDialogOpen={modalOpen}
-                    notification={selectedNotification} // Pass notification data to MintApproval
-                />
-            )}
         </>
     );
 };
-
 
 export default Notification;

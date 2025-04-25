@@ -92,7 +92,7 @@ const CentralBankDashboard = () => {
     const digitalCbdcInCirculation = centralHoldingsDemo;
     const fiatInCirculation = connectedBanknotes;
     const centralBankHoldings = withoutConnectedBanknotes;
-    const totalCBDC = totalMinted;
+    const totalCBDCMinted = totalMinted;
 
     // Format Euro currency
     const formatCurrency = (amount: number) =>
@@ -170,12 +170,12 @@ const CentralBankDashboard = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center text-gray-700">
                                                 <Banknote className="h-5 w-5 text-primary" />
-                                                <span className="ml-2 text-sm font-medium">Token Supply and Liquidity</span>
+                                                <span className="ml-2 text-sm font-medium">Total Tokens Minted</span>
                                             </div>
                                             <TrendingUp className="h-4 w-4 text-green-500" />
                                         </div>
-                                        <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalCBDC)}</div>
-                                        <div className="mt-1 text-xs text-muted-foreground">+3.2% MoM</div>
+                                        <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalCBDCMinted)}</div>
+                                        {/* <div className="mt-1 text-xs text-muted-foreground">+3.2% MoM</div> */}
                                     </div>
                                 </motion.div>
 

@@ -32,7 +32,6 @@ const Header = ({
   userAvatar,
   isAuthenticated: propIsAuthenticated,
   sessionTimeRemaining: propSessionTimeRemaining,
-  notificationCount = 3,
   activePage,
 }: HeaderProps) => {
   const {

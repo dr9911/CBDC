@@ -67,7 +67,16 @@ const Sidebar = ({ activePage = 'dashboard' }: SidebarProps) => {
             toggle: () => setLiabilitiesOpen(!liabilitiesOpen),
             submenu: [{ id: 'mint', label: 'Mint New Supply', icon: <Banknote size={20} />, path: '/mint', roles: ['central_bank'] }],
         },
+        { id: 'transfer', label: 'Transfer', icon: <ArrowUpDown size={20} />, path: '/transfer', roles: ['central_bank'] },
+        { id: 'transactions', label: 'Transactions', icon: <History size={20} />, path: '/transactions', roles: ['user'] },
         { id: 'history', label: 'Transaction History', icon: <History size={20} />, path: '/history', roles: ['commercial_bank', 'central_bank'] },
+        {
+            id: 'mintapproval',
+            label: 'Mint Events',
+            icon: <History size={20} />,
+            path: '/mint/approval',
+            roles: ['central_bank'],
+        },
         {
             id: 'assets',
             label: 'Assets',

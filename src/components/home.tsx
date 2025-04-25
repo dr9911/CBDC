@@ -16,7 +16,6 @@ interface HomeProps {
     userAvatar?: string;
     isAuthenticated?: boolean;
     sessionTimeRemaining?: number;
-    notificationCount?: number;
     recentTransactions?: Array<{
         id: string;
         date: string;
@@ -28,7 +27,7 @@ interface HomeProps {
     }>;
 }
 
-const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining, notificationCount = 3 }: HomeProps) => {
+const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: HomeProps) => {
     const { currentUser } = useAuth();
     const [userData, setUserData] = useState<any>(null);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -42,8 +41,11 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining, not
         if (!userData?.id) return;
 
         const fetchTransactions = async () => {
-            const { data: transactionsList, error } = await supabase.from('Transactions').select('*').or(`sender.eq.${userData.id},receiver.eq.${userData.id}`);
-
+            const { data: transactionsList, error } = await supabase
+                .from('Transactions')
+                .select('*, receiverName:Users(name)')
+                .or(`sender.eq.${userData.id},receiver.eq.${userData.id}`);
+            localStorage.setItem('transactions', JSON.stringify(transactionsList));
             if (error) {
                 console.error('Error fetching transactions:', error);
                 return;
@@ -85,7 +87,6 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining, not
                 userAvatar={effectiveUserAvatar}
                 isAuthenticated={isAuthenticated}
                 sessionTimeRemaining={sessionTimeRemaining}
-                notificationCount={notificationCount}
             >
                 <div className="h-full">
                     <div className="h-full overflow-auto px-4 sm:px-6 pb-6">

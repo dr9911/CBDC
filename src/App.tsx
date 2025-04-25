@@ -15,6 +15,7 @@ const AccountsPage = lazy(() => import('./components/accounts/AccountsPage'));
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage'));
 const HistoryPage = lazy(() => import('./components/history/HistoryPage'));
 const MintApproval = lazy(() => import('./components/minting/MintApproval'));
+const Transfer = lazy(() => import('./components/dashboard/Transfer'));
 
 function LoadingScreen({ title = 'Loading Dashboard', message = 'Preparing your personalized view...' }: { title?: string; message?: string }) {
     return (
@@ -65,6 +66,15 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <Suspense fallback={<LoadingScreen />}>{currentUser?.role === 'central_bank' ? <CentralBankDashboard /> : <Home />}</Suspense>
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/transfer"
+                        element={
+                            <ProtectedRoute>
+                                <Suspense fallback={<LoadingScreen />}>{currentUser?.role === 'central_bank' ? <Transfer /> : <Home />}</Suspense>
                             </ProtectedRoute>
                         }
                     />

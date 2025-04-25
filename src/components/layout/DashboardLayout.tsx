@@ -21,7 +21,6 @@ const DashboardLayout = ({
   userAvatar,
   isAuthenticated,
   sessionTimeRemaining,
-  notificationCount = 3,
 }: DashboardLayoutProps) => {
   const location = useLocation();
   const { currentUser } = useAuth();
@@ -57,7 +56,6 @@ const DashboardLayout = ({
           userAvatar={userAvatar}
           isAuthenticated={isAuthenticated}
           sessionTimeRemaining={sessionTimeRemaining}
-          notificationCount={notificationCount}
           activePage={activePage}
         />
 

@@ -14,24 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/utils/supabase';
-
-// --- User & Transaction Interfaces ---
-// interface Transaction {
-//     id: string;
-//     sender: string;
-//     receiver: string;
-//     amount: number;
-//     timestamp: string;
-//     status: 'completed' | 'pending' | 'failed';
-//     type: 'user_to_user' | 'bank_to_user' | 'user_to_bank' | 'mint';
-// // }
-
-// interface User {
-//     id: string;
-//     username: string;
-//     balance: number;
-//     role: string;
-// }
+import { toast } from 'sonner';
 
 interface BalanceCardProps {
     balance?: number;
@@ -41,16 +24,14 @@ interface BalanceCardProps {
 const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: BalanceCardProps) => {
     const [currentBalance, setCurrentBalance] = useState(initialBalance);
     const { currentUser, setCurrentUser } = useAuth();
-    const { toast } = useToast();
+    // const { toast } = useToast();
 
-    // --- Modal States ---
     const [showSendDialog, setShowSendDialog] = useState(false);
     const [isQRModalOpen, setQRModalOpen] = useState(false);
     const [showReceiveDialog, setShowReceiveDialog] = useState(false);
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const [qrData, setQRData] = useState(null);
 
-    // --- Form States ---
     const [sendRecipient, setSendRecipient] = useState('');
     const [sendAmount, setSendAmount] = useState('');
     const [sendNote, setSendNote] = useState('');
@@ -59,12 +40,10 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     const [generalError, setGeneralError] = useState('');
     const [isSending, setIsSending] = useState(false);
 
-    // Sync balance if prop changes
     useEffect(() => {
         setCurrentBalance(initialBalance);
     }, [initialBalance]);
 
-    // Reset form state when modal is closed
     useEffect(() => {
         setSendRecipient('');
         setSendAmount('');
@@ -78,17 +57,14 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     function handleDataFromQR(data: string) {
         console.log('QR Code data:', data);
         addToBalance(data);
-        // setQRData(data);
-        // setRecipient(data); // Autofill recipient with scanned username
         setQRModalOpen(false);
-        // setSendModalOpen(true); // Open send modal with scanned data
     }
     function addToBalance(data: string) {
-        const valueToAdd = 20; // Hardcoded value for demonstration
+        const valueToAdd = 20;
         const parsedData = parseFloat(data);
         setCurrentBalance((prevBalance) => prevBalance + valueToAdd);
     }
-    // --- Handle Send Token ---
+
     const handleSendToken = async () => {
         setIsSending(true);
         setRecipientError('');
@@ -107,7 +83,6 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                 throw new Error('Validation failed');
             }
 
-            // 1. Fetch sender and recipient from Supabase
             const { data: sender, error: senderError } = await supabase.from('Users').select('*').eq('id', currentUser?.id).single();
 
             const { data: receiver, error: receiverError } = await supabase.from('Users').select('*').eq('id', sendRecipient).single();
@@ -127,30 +102,58 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                 throw new Error('Self-send attempt');
             }
 
-            if (sender.balance < parsedAmount) {
-                setAmountError('Insufficient funds.');
-                throw new Error('Insufficient funds');
+            if (sender.role === 'user' || sender.role === 'commercial_bank') {
+                if (sender.balance < parsedAmount) {
+                    setAmountError('Insufficient funds.');
+                    throw new Error('Insufficient funds');
+                }
+
+                const { error: senderUpdateError } = await supabase
+                    .from('Users')
+                    .update({ balance: sender.balance - parsedAmount })
+                    .eq('id', sender.id);
+
+                const { error: receiverUpdateError } = await supabase
+                    .from('Users')
+                    .update({ balance: receiver.balance + parsedAmount })
+                    .eq('id', receiver.id);
+
+                if (senderUpdateError || receiverUpdateError) {
+                    throw new Error('Balance update failed.');
+                }
+
+                const updatedUser = { ...currentUser, balance: currentUser.balance - parsedAmount };
+                setCurrentUser(updatedUser);
+                setCurrentBalance(sender.balance - parsedAmount);
             }
 
-            // 2. Update balances atomically (do it in parallel)
-            const { error: senderUpdateError } = await supabase
-                .from('Users')
-                .update({ balance: sender.balance - parsedAmount })
-                .eq('id', sender.id);
+            if (sender.role === 'central_bank') {
+                const { data: tokenData, error: receiverError } = await supabase.from('TokenSupply').select('*').eq('id', 1);
 
-            const { error: receiverUpdateError } = await supabase
-                .from('Users')
-                .update({ balance: receiver.balance + parsedAmount })
-                .eq('id', receiver.id);
+                const tokenMinted = tokenData[0].total_minted;
+                const tokenInCirculation = tokenData[0].in_circulation;
+                const tokenBalance = tokenMinted - tokenInCirculation;
 
-            if (senderUpdateError || receiverUpdateError) {
-                throw new Error('Balance update failed.');
+                if (tokenBalance < parsedAmount) {
+                    setAmountError('Insufficient funds.');
+                    throw new Error('Insufficient funds');
+                }
+                const { error: senderUpdateError } = await supabase
+                    .from('TokenSupply')
+                    .update({ in_circulation: tokenInCirculation + parsedAmount })
+                    .eq('id', 1);
+                const { error: receiverUpdateError } = await supabase
+                    .from('Users')
+                    .update({ balance: receiver.balance + parsedAmount })
+                    .eq('id', receiver.id);
+                if (senderUpdateError || receiverUpdateError) {
+                    throw new Error('Balance update failed.');
+                }
+
+                setCurrentBalance(tokenBalance - parsedAmount);
             }
+            const type = sender.role + '_to_' + receiver.role;
 
-            const updatedUser = { ...currentUser, balance: currentUser.balance - parsedAmount };
-            setCurrentUser(updatedUser);
-
-            // 3. Add transaction
             const { error: transactionError } = await supabase.from('Transactions').insert([
                 {
                     sender: sender.id,
@@ -158,22 +161,19 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     amount: parsedAmount,
                     timestamp: new Date().toISOString(),
                     status: 'completed',
-                    type: 'user_to_user',
+                    type: type,
                 },
             ]);
+
+            setCurrentUser({ ...currentUser });
 
             if (transactionError) {
                 throw new Error('Transaction logging failed.');
             }
 
-            // 4. Update UI
-            setCurrentBalance(sender.balance - parsedAmount);
-
-            toast({
-                title: 'Transaction Successful',
-                description: `Sent ${parsedAmount.toFixed(2)} to ${receiver.username}.`,
+            toast.success('Transaction Successful!', {
+                description: 'Your transaction has been completed successfully.',
             });
-
             setShowSendDialog(false);
         } catch (error: any) {
             console.error('Send transaction failed:', error);
