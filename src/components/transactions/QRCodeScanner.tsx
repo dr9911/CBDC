@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Webcam from 'react-webcam';
-import jsQR from 'jsQR';
+import jsQR from 'jsqr';
 import { Button } from '@/components/ui/button';
 
 const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
