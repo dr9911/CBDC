@@ -1,64 +1,79 @@
-import React, { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader } from "@zxing/browser";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useRef, useState } from 'react';
+import Webcam from 'react-webcam';
+import jsQR from 'jsQR';
+import { Button } from '@/components/ui/button';
 
 const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
-  const videoRef = useRef(null);
-  const [scanner, setScanner] = useState(null);
-  const [error, setError] = useState(null);
+    const webcamRef = useRef(null);
+    const [error, setError] = useState(null);
+    const [scanning, setScanning] = useState(false);
+    const [scannedData, setScannedData] = useState(null); // To store and display scanned data
 
-  useEffect(() => {
-    const codeReader = new BrowserMultiFormatReader();
-    setScanner(codeReader);
+    useEffect(() => {
+        if (scanning) {
+            const interval = setInterval(() => {
+                scanQRCode();
+            }, 100); // Capture and scan every 100ms
 
-    return () => {
-      if (scanner) {
-        scanner.reset();
-      }
-    };
-  }, []);
-
-  const startScanning = async () => {
-    setError(null);
-    try {
-      const videoInputDevices = await BrowserMultiFormatReader.listVideoInputDevices();
-      if (videoInputDevices.length === 0) {
-        throw new Error("No camera found");
-      }
-
-      await scanner.decodeFromVideoDevice(
-        videoInputDevices[0].deviceId, // Use first available camera
-        videoRef.current,
-        (result, error) => {
-          if (result) {
-            console.log("QR Code detected:", result.getText());
-            onScanSuccess(result.getText());
-            stopScanning();
-          }
-          if (error) console.error("Scanning error:", error);
+            return () => clearInterval(interval);
         }
-      );
-    } catch (err) {
-      setError(`Camera error: ${err.message}`);
-    }
-  };
+    }, [scanning]);
 
-  const stopScanning = () => {
-    if (scanner) {
-      scanner.reset();
-    }
-  };
+    const scanQRCode = () => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (imageSrc) {
+            const image = new Image();
+            image.src = imageSrc;
+            image.onload = () => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                context.drawImage(image, 0, 0);
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-  return (
-    <div className="w-full max-w-md mx-auto">
-      <video ref={videoRef} className="w-full h-64" autoPlay playsInline muted />
-      {error && <p className="text-red-500">{error}</p>}
-      <div className="flex justify-between mt-4">
-        <Button onClick={onCancel}>Close</Button>
-        <Button onClick={startScanning}>Start Scanning</Button>
-      </div>
-    </div>
-  );
+                // Scan for QR Code using jsQR
+                const code = jsQR(imageData.data, canvas.width, canvas.height);
+                if (code) {
+                    // When QR code is found, stop scanning and trigger the success callback
+                    setScanning(false);
+                    setScannedData(code.data); // Set the scanned QR code data (URL or text)
+                    onScanSuccess(code.data); // Pass QR code data to the onScanSuccess callback
+                }
+            };
+        }
+    };
+
+    const startScanning = () => {
+        setScanning(true);
+    };
+
+    return (
+        <div className="w-full max-w-md mx-auto">
+            <Webcam
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                width="100%"
+                videoConstraints={{ facingMode: 'environment' }}
+                onUserMediaError={(error) => setError('Unable to access webcam')}
+                audio={false}
+            />
+            {error && <p className="text-red-500">{error}</p>}
+
+            {/* Display scanned data here */}
+            {scannedData && (
+                <div className="mt-4">
+                    <h3 className="text-xl font-semibold">Scanned Data:</h3>
+                    <p className="text-blue-500">{scannedData}</p>
+                </div>
+            )}
+
+            <div className="flex justify-between mt-4">
+                <Button onClick={onCancel}>Close</Button>
+                <Button onClick={startScanning} disabled={scanning}>
+                    {scanning ? 'Scanning...' : 'Start Scanning'}
+                </Button>
+            </div>
+        </div>
+    );
 };
 
 export default QRCodeScanner;
