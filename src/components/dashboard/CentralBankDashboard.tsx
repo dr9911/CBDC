@@ -123,7 +123,7 @@ const CentralBankDashboard = () => {
 
     return (
         <DashboardLayout activePage="dashboard" userName={currentUser?.name || 'Central Bank'} userAvatar={currentUser?.avatar || ''}>
-            <div className="space-y-8 pb-8">
+            <div className="space-y-8 pb-8 px-4 sm:px-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>

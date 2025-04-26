@@ -88,19 +88,19 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
                 isAuthenticated={isAuthenticated}
                 sessionTimeRemaining={sessionTimeRemaining}
             >
-                <div className="h-full">
+                <div className="h-full flex flex-col">
                     <div className="h-full overflow-auto px-4 sm:px-6 pb-6">
                         <div className="space-y-6 sm:space-y-8">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
                                 <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Dashboard</h1>
 
-                                {/* Flex container with a very small gap */}
-                                <div className="flex flex-col md:flex-row gap-5 mb-6 sm:mb-8">
-                                    <div>
+                                {/* Responsive flex layout */}
+                                <div className="flex flex-col md:flex-row md:items-start gap-5 mb-6 sm:mb-8">
+                                    <div className="w-full md:w-1/2">
                                         <BalanceCard balance={userData?.balance} />
                                     </div>
                                     {userRole === 'user' && (
-                                        <div>
+                                        <div className="w-full md:w-1/2">
                                             <AssetsCard stocks={100000} bonds={50000} securities={25000} />
                                         </div>
                                     )}
@@ -127,6 +127,7 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
                                 )}
                             </motion.div>
 
+                            {/* Hidden sections */}
                             <div className="hidden">
                                 <TransactionForm onSubmit={handleTransactionSubmit} />
                             </div>

@@ -54,8 +54,6 @@ const MintApproval = ({ confirmDialogOpen: propConfirmDialogOpen, notification: 
     // }, []);
     useEffect(() => {
         const fetchMintingEvents = async () => {
-        
-
             const { data, error } = await supabase.from('CentralBankEvents').select(`
                 *,
                 minted_by_user:minted_by (
@@ -193,7 +191,7 @@ const MintApproval = ({ confirmDialogOpen: propConfirmDialogOpen, notification: 
     const isMfaValid = mfaCode.length === 6;
     return (
         <DashboardLayout activePage="mint">
-            <div className="space-y-6">
+            <div className="space-y-6 px-4 sm:px-6">
                 <h1 className="text-2xl font-bold tracking-tight">Minting Events</h1>
                 <p className="text-muted-foreground">View all the minting Events.</p>
                 <div className="grid gap-6">
@@ -208,13 +206,14 @@ const MintApproval = ({ confirmDialogOpen: propConfirmDialogOpen, notification: 
                         </CardHeader> */}
 
                         <CardContent className="p-4 sm:p-6">
+                            {/* Search */}
                             <div className="flex flex-col md:flex-row gap-4 mb-6">
                                 <div className="relative flex-1">
                                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="search"
                                         placeholder="Search by ID or description..."
-                                        className="pl-8"
+                                        className="pl-8 w-full"
                                         // value={searchQuery}
                                         // onChange={handleSearchChange}
                                     />
@@ -223,9 +222,9 @@ const MintApproval = ({ confirmDialogOpen: propConfirmDialogOpen, notification: 
 
                             {/* Table */}
                             <div className="rounded-md border overflow-x-auto">
-                                <div className="min-w-[900px] lg:min-w-0">
-                                    {/* Table Header */}
-                                    <div className="grid grid-cols-12 gap-2 p-4 bg-muted/50 text-xs sm:text-sm font-medium text-muted-foreground sticky top-0 z-10">
+                                <div className="min-w-full">
+                                    {/* Desktop Header */}
+                                    <div className="hidden sm:grid grid-cols-12 gap-2 p-4 bg-muted/50 text-xs sm:text-sm font-medium text-muted-foreground sticky top-0 z-10">
                                         <div className="col-span-2">ID</div>
                                         <div className="col-span-2">Created At</div>
                                         <div className="col-span-2">Amount</div>
@@ -243,7 +242,7 @@ const MintApproval = ({ confirmDialogOpen: propConfirmDialogOpen, notification: 
                                             {mintEvents.map((record) => (
                                                 <motion.div
                                                     key={record.id}
-                                                    className="grid grid-cols-12 gap-2 p-4 items-center text-xs sm:text-sm hover:bg-muted/50 transition-colors cursor-pointer"
+                                                    className="flex flex-col sm:grid sm:grid-cols-12 gap-2 p-4 text-xs sm:text-sm hover:bg-muted/50 transition-colors cursor-pointer"
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     exit={{ opacity: 0 }}
@@ -255,25 +254,58 @@ const MintApproval = ({ confirmDialogOpen: propConfirmDialogOpen, notification: 
                                                         }
                                                     }}
                                                 >
-                                                    <div className="col-span-2 truncate" title={record.id}>
-                                                        {record.id}
+                                                    {/* Mobile stacked view */}
+                                                    <div className="flex justify-between sm:hidden">
+                                                        <span className="font-medium">ID:</span>
+                                                        <span className="truncate" title={record.id}>
+                                                            {record.id}
+                                                        </span>
                                                     </div>
-                                                    <div className="col-span-2 truncate" title={record.created_at}>
-                                                        {formatDate(record.created_at)}
+                                                    <div className="flex justify-between sm:hidden">
+                                                        <span className="font-medium">Created At:</span>
+                                                        <span>{formatDate(record.created_at)}</span>
                                                     </div>
-                                                    <div className="col-span-2 truncate" title={record.amount}>
-                                                        {record.amount ? Number(record.amount).toLocaleString() : '0'} CBDC
+                                                    <div className="flex justify-between sm:hidden">
+                                                        <span className="font-medium">Amount:</span>
+                                                        <span>{record.amount ? Number(record.amount).toLocaleString() : '0'} CBDC</span>
                                                     </div>
-                                                    <div className="col-span-2 truncate" title={record.minted_by}>
-                                                        {record.minted_by_user?.name || '-'}
+                                                    <div className="flex justify-between sm:hidden">
+                                                        <span className="font-medium">Minted By:</span>
+                                                        <span className="truncate">{record.minted_by_user?.name || '-'}</span>
                                                     </div>
-                                                    <div className="col-span-2 truncate" title={record.approved_at}>
-                                                        {record.approved_at ? formatDate(record.approved_at) : '-'}
+                                                    <div className="flex justify-between sm:hidden">
+                                                        <span className="font-medium">Approved At:</span>
+                                                        <span>{record.approved_at ? formatDate(record.approved_at) : '-'}</span>
                                                     </div>
-                                                    <div className="col-span-1 text-center">
+                                                    <div className="flex justify-between sm:hidden">
+                                                        <span className="font-medium">Status:</span>
                                                         <Badge className="text-xs capitalize">{record.status}</Badge>
                                                     </div>
-                                                    <div className="col-span-1 truncate" title={record.note}>
+                                                    <div className="flex justify-between sm:hidden">
+                                                        <span className="font-medium">Note:</span>
+                                                        <span className="truncate">{record.note}</span>
+                                                    </div>
+
+                                                    {/* Desktop grid view */}
+                                                    <div className="hidden sm:block sm:col-span-2 truncate" title={record.id}>
+                                                        {record.id}
+                                                    </div>
+                                                    <div className="hidden sm:block sm:col-span-2 truncate" title={record.created_at}>
+                                                        {formatDate(record.created_at)}
+                                                    </div>
+                                                    <div className="hidden sm:block sm:col-span-2 truncate" title={record.amount}>
+                                                        {record.amount ? Number(record.amount).toLocaleString() : '0'} CBDC
+                                                    </div>
+                                                    <div className="hidden sm:block sm:col-span-2 truncate" title={record.minted_by}>
+                                                        {record.minted_by_user?.name || '-'}
+                                                    </div>
+                                                    <div className="hidden sm:block sm:col-span-2 truncate" title={record.approved_at}>
+                                                        {record.approved_at ? formatDate(record.approved_at) : '-'}
+                                                    </div>
+                                                    <div className="hidden sm:block sm:col-span-1 text-center">
+                                                        <Badge className="text-xs capitalize">{record.status}</Badge>
+                                                    </div>
+                                                    <div className="hidden sm:block sm:col-span-1 truncate" title={record.note}>
                                                         {record.note}
                                                     </div>
                                                 </motion.div>
@@ -286,7 +318,6 @@ const MintApproval = ({ confirmDialogOpen: propConfirmDialogOpen, notification: 
                             {/* Footer */}
                             <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2 pt-4 mt-4 border-t">
                                 <div className="text-xs text-muted-foreground">{mintEvents.length} record(s) found.</div>
-                                {/* Pagination (optional) */}
                                 <div className="flex items-center space-x-2">
                                     <Button variant="outline" size="sm" disabled>
                                         Previous

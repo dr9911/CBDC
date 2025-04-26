@@ -199,7 +199,7 @@ const ProfilePage = () => {
 
   return (
     <DashboardLayout userName={userName} userAvatar={userAvatar}>
-      <div className="space-y-6 p-4">
+      <div className="space-y-6 p-4 px-4 sm:px-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
@@ -208,17 +208,7 @@ const ProfilePage = () => {
               Manage your account and preferences
             </p>
           </div>
-          <div className="flex space-x-2 mt-4 md:mt-0">
-            <Button
-              variant="outline"
-              onClick={() => setShowReceiveDialog(true)}
-            >
-              <QrCode className="mr-2 h-4 w-4" /> Receive Money
-            </Button>
-            <Button onClick={() => setShowSendDialog(true)}>
-              <Send className="mr-2 h-4 w-4" /> Send Money
-            </Button>
-          </div>
+        
         </div>
         {/* Profile Summary & Tabs */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -335,9 +325,9 @@ const ProfilePage = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end pt-[50px]">
+                  {/* <CardFooter className="flex justify-end pt-[50px]">
                     <Button>Save Changes</Button>
-                  </CardFooter>
+                  </CardFooter> */}
                 </Card>
               </TabsContent>
               {/* Security Tab */}
