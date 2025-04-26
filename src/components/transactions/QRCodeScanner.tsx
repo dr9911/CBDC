@@ -1,45 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
-import Webcam from 'react-webcam';
-import jsQR from 'jsqr';
+import React, { useState } from 'react';
+import { QrReader } from 'react-qr-reader'; // ✅ Correct import
 import { Button } from '@/components/ui/button';
 
-const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
-    const webcamRef = useRef(null);
-    const [error, setError] = useState(null);
+const QRCodeScannerComponent = ({ onScanSuccess, onCancel }) => {
+    const [scannedData, setScannedData] = useState(null);
     const [scanning, setScanning] = useState(false);
-    const [scannedData, setScannedData] = useState(null); // To store and display scanned data
+    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        if (scanning) {
-            const interval = setInterval(() => {
-                scanQRCode();
-            }, 100); // Capture and scan every 100ms
-
-            return () => clearInterval(interval);
+    const handleScan = (data) => {
+        if (data) {
+            console.log('Scanned Data:', data);
+            setScannedData(data?.text || data); // react-qr-reader v3 returns {text: "..."}
+            onScanSuccess(data?.text || data);
+            setScanning(false);
         }
-    }, [scanning]);
+    };
 
-    const scanQRCode = () => {
-        const imageSrc = webcamRef.current.getScreenshot();
-        if (imageSrc) {
-            const image = new Image();
-            image.src = imageSrc;
-            image.onload = () => {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                context.drawImage(image, 0, 0);
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-
-                // Scan for QR Code using jsQR
-                const code = jsQR(imageData.data, canvas.width, canvas.height);
-                if (code) {
-                    // When QR code is found, stop scanning and trigger the success callback
-                    setScanning(false);
-                    setScannedData(code.data); // Set the scanned QR code data (URL or text)
-                    onScanSuccess(code.data); // Pass QR code data to the onScanSuccess callback
-                }
-            };
-        }
+    const handleError = (err) => {
+        console.error('QR Code Scan Error:', err);
+        setError('Error scanning QR code: ' + err);
     };
 
     const startScanning = () => {
@@ -48,17 +27,23 @@ const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
 
     return (
         <div className="w-full max-w-md mx-auto">
-            <Webcam
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                width="100%"
-                videoConstraints={{ facingMode: 'environment' }}
-                onUserMediaError={(error) => setError('Unable to access webcam')}
-                audio={false}
-            />
+            {scanning && (
+                <QrReader
+                    constraints={{ facingMode: 'environment' }}
+                    onResult={(result, error) => {
+                        if (!!result) {
+                            handleScan(result);
+                        }
+                        if (!!error) {
+                            handleError(error);
+                        }
+                    }}
+                    
+                />
+            )}
+
             {error && <p className="text-red-500">{error}</p>}
 
-            {/* Display scanned data here */}
             {scannedData && (
                 <div className="mt-4">
                     <h3 className="text-xl font-semibold">Scanned Data:</h3>
@@ -76,4 +61,4 @@ const QRCodeScanner = ({ onScanSuccess, onCancel }) => {
     );
 };
 
-export default QRCodeScanner;
+export default QRCodeScannerComponent;

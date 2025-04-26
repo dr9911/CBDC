@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/utils/supabase';
 import { toast } from 'sonner';
+import QRCodeScannerComponent from '../transactions/QRCodeScanner';
 
 interface BalanceCardProps {
     balance?: number;
@@ -379,7 +380,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
             {/* QR Code Scanner Modal */}
             <Dialog open={isQRModalOpen} onOpenChange={setQRModalOpen}>
                 <DialogContent>
-                    <QRCodeScanner onScanSuccess={handleDataFromQR} onCancel={() => setQRModalOpen(false)} />
+                    <QRCodeScannerComponent onScanSuccess={handleDataFromQR} onCancel={() => setQRModalOpen(false)} />
                 </DialogContent>
             </Dialog>
         </>
