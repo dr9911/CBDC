@@ -10,8 +10,12 @@ import TransactionForm from '../transactions/TransactionForm';
 const Transfer = () => {
     const { currentUser } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [tokenSupply, setTokenSupply] = useState<any>(null);
-
+    const [tokenSupply, setTokenSupply] = useState({
+        total_minted: 0,
+        distributed: 0,
+        bank_notes_issued: 0,
+        bank_notes_redeemed: 0,
+    });
     useEffect(() => {
         if (!currentUser?.id) return;
 
@@ -51,6 +55,9 @@ const Transfer = () => {
         fetchTransactions();
     }, [currentUser]);
 
+    const { total_minted, distributed, bank_notes_issued, bank_notes_redeemed } = tokenSupply;
+
+
     const handleViewTransaction = (id: string) => {
         console.log(`View transaction details for ID: ${id}`);
     };
@@ -76,7 +83,7 @@ const Transfer = () => {
 
                                 {/* Flex container with a very small gap */}
                                 <div className="flex flex-col md:flex-row gap-5 mb-6 sm:mb-8">
-                                    <div>{tokenSupply && <BalanceCard balance={tokenSupply?.total_minted - tokenSupply?.in_circulation} />}</div>
+                                    <div>{tokenSupply && <BalanceCard balance={total_minted - distributed - bank_notes_issued} />}</div>
                                 </div>
 
                                 <motion.div

@@ -16,10 +16,39 @@ const CentralBankDashboard = () => {
     const { currentUser } = useAuth();
     const userId = currentUser?.id;
 
-    // Fetch system data from localStorage
-    const [systemData, setSystemData] = useState<any>(null);
     const [totalMinted, setTotalMinted] = useState<number>(0);
     const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+
+    const [tokenData, setTokenData] = useState({
+        total_minted: 0,
+        distributed: 0,
+        bank_notes_issued: 0,
+        bank_notes_redeemed: 0,
+    });
+
+    useEffect(() => {
+        const fetchTokenSupply = async () => {
+            const { data, error } = await supabase.from('TokenSupply').select('*').single();
+            if (error) {
+                console.error('Failed to fetch token supply:', error);
+                return;
+            }
+            setTotalMinted(data?.total_minted || 0);
+            setTokenData(data);
+        };
+
+        fetchTokenSupply();
+    }, []);
+
+    const { total_minted, distributed, bank_notes_issued, bank_notes_redeemed } = tokenData;
+
+    // const centralBankToken = total_minted - distributed - bank_notes_issued;
+
+    const banknoteTokens = bank_notes_issued - bank_notes_redeemed;
+    const centralBankTotalHoldings = total_minted - distributed - bank_notes_redeemed;
+    const nonNoteTokens = centralBankTotalHoldings - banknoteTokens;
+    const tokensInCirculation = distributed + bank_notes_redeemed; // Here we assume that all redeemed banknotes are in circulation
+    // const tokensInCirculation = distributed + bank_notes_issued; // Here we assume that all issued banknotes are in circulation
 
     useEffect(() => {
         if (!userId) return;
@@ -61,27 +90,13 @@ const CentralBankDashboard = () => {
         };
     }, [userId]);
 
-    useEffect(() => {
-        const stored = localStorage.getItem('users');
-        const users = stored ? JSON.parse(stored) : [];
-        const system = users.find((u: any) => u.id === 'system') || { totalMinted: 1_000_000 };
-        setSystemData(system);
-        setTotalMinted(system.totalMinted);
-    }, []);
-
-    // Fetch live supply from Supabase
-    useEffect(() => {
-        const fetchSupply = async () => {
-            const { data, error } = await supabase.from('TokenSupply').select('total_minted');
-            if (error) {
-                console.error('Error fetching token supply:', error);
-                return;
-            }
-            setTotalMinted(data?.[0]?.total_minted || 0);
-        };
-
-        fetchSupply();
-    }, []);
+    // useEffect(() => {
+    //     const stored = localStorage.getItem('users');
+    //     const users = stored ? JSON.parse(stored) : [];
+    //     const system = users.find((u: any) => u.id === 'system') || { totalMinted: 1_000_000 };
+    //     setSystemData(system);
+    //     setTotalMinted(system.totalMinted);
+    // }, []);
 
     // Demo-derived metrics
     const connectedBanknotes = 5_800_000; // e.g. physical banknotes tracked
@@ -90,9 +105,6 @@ const CentralBankDashboard = () => {
 
     // Map to display variables
     const digitalCbdcInCirculation = centralHoldingsDemo;
-    const fiatInCirculation = connectedBanknotes;
-    const centralBankHoldings = withoutConnectedBanknotes;
-    const totalCBDCMinted = totalMinted;
 
     // Format Euro currency
     const formatCurrency = (amount: number) =>
@@ -130,23 +142,14 @@ const CentralBankDashboard = () => {
                         <h1 className="text-3xl font-bold">Central Bank Dashboard</h1>
                         <p className="text-muted-foreground mt-1">Overview of CBDC operations and liquidity</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="px-3 py-1 bg-green-50 text-green-700 border-green-200">
-                            <Activity className="h-4 w-4 mr-1" /> System Online
-                        </Badge>
-                        <Badge variant="outline" className="px-3 py-1 bg-blue-50 text-blue-700 border-blue-200">
-                            <Clock className="h-4 w-4 mr-1" /> Last Updated: Just now
-                        </Badge>
-                    </div>
                 </div>
 
                 {/* Summary Metrics */}
                 <Card className="bg-white border border-gray-200 shadow-md">
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold text-[#1f0d68] tracking-tight">
-                                {formatCurrency(totalMinted + digitalCbdcInCirculation + fiatInCirculation + centralBankHoldings)}
-                            </h2>
+                            <h2 className="text-2xl font-bold text-[#1f0d68] tracking-tight">Total CBDC Supply - {formatCurrency(total_minted)}</h2>
+
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -161,99 +164,122 @@ const CentralBankDashboard = () => {
                     </CardHeader>
 
                     <CardContent>
-                        <div className="flex flex-col lg:flex-row gap-6">
-                            {/* Left Group */}
-                            <div className="flex flex-col lg:flex-row gap-6 w-full lg:w-1/2">
-                                {/* Token Supply and Liquidity */}
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex-1">
-                                    <div className="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-full">
-                                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-6">
+                            {/* Row 1: Split View */}
+                            <div className="flex flex-col lg:flex-row gap-6">
+                                {/* Left Column */}
+                                <div className="flex flex-col gap-4 w-full lg:w-1/2">
+                                    {/* Total Tokens In Circulation */}
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                                        <div className="p-4 bg-gray-50 rounded-lg">
                                             <div className="flex items-center text-gray-700">
-                                                <Banknote className="h-5 w-5 text-primary" />
-                                                <span className="ml-2 text-sm font-medium">Total Tokens Minted</span>
+                                                <Banknote className="h-5 w-5 text-green-600" />
+                                                <span className="ml-2 text-sm font-medium">Total Tokens</span>
                                             </div>
-                                            <TrendingUp className="h-4 w-4 text-green-500" />
+                                            <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(total_minted - bank_notes_issued)}</div>
                                         </div>
-                                        <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalCBDCMinted)}</div>
-                                        {/* <div className="mt-1 text-xs text-muted-foreground">+3.2% MoM</div> */}
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
 
-                                {/* Central Holdings */}
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex-1">
-                                    <div className="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-full">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center text-gray-700">
-                                                <Banknote className="h-5 w-5 text-blue-500" />
-                                                <span className="ml-2 text-sm font-medium">
-                                                    Central Holdings
-                                                    <span
-                                                        className="ml-2 text-[7px] text-[#1f0d68] bg-muted px-1.5 py-0.5 rounded uppercase cursor-help"
-                                                        title="This is a demo metric"
-                                                    >
-                                                        demo
-                                                    </span>
-                                                </span>
+                                    {/* Row with Tokens to User + Commercial Bank and Central Bank */}
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        {/* Tokens Distributed to Commercial/User */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="w-full sm:w-1/2"
+                                        >
+                                            <div className="p-4 bg-gray-50 rounded-lg h-full">
+                                                <div className="flex items-center text-gray-700">
+                                                    <Banknote className="h-5 w-5 text-blue-600" />
+                                                    <span className="ml-2 text-sm font-medium">Distributed to Banks and Users</span>
+                                                </div>
+                                                <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(distributed)}</div>
                                             </div>
-                                            <ArrowUpRight className="h-4 w-4 text-green-500" />
-                                        </div>
-                                        <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(digitalCbdcInCirculation)}</div>
-                                        <div className="mt-1 text-xs text-muted-foreground">+2.1% MoM</div>
+                                        </motion.div>
+
+                                        {/* Central Bank Balance */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="w-full sm:w-1/2"
+                                        >
+                                            <div className="p-4 bg-red-50 rounded-lg h-full">
+                                                <div className="flex items-center text-gray-700">
+                                                    <Banknote className="h-5 w-5 text-indigo-500" />
+                                                    <span className="ml-2 text-sm font-medium">Central Bank Balance</span>
+                                                </div>
+                                                <div className="mt-2 text-2xl font-bold text-gray-900">
+                                                    {formatCurrency(total_minted - distributed - bank_notes_issued)}
+                                                </div>
+                                            </div>
+                                        </motion.div>
                                     </div>
-                                </motion.div>
-                            </div>
+                                </div>
 
-                            {/* Vertical Divider */}
-                            <div className="hidden lg:block w-px bg-gray-300 mx-2" />
-
-                            {/* Right Group */}
-                            <div className="flex flex-col lg:flex-row gap-6 w-full lg:w-1/2">
-                                {/* Connected Banknotes */}
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex-1">
-                                    <div className="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-full">
-                                        <div className="flex items-center justify-between">
+                                {/* Right Column */}
+                                <div className="flex flex-col gap-4 w-full lg:w-1/2">
+                                    {/* Connected Banknotes */}
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                                        <div className="p-4 bg-gray-50 rounded-lg">
                                             <div className="flex items-center text-gray-700">
                                                 <Banknote className="h-5 w-5 text-amber-500" />
-                                                <span className="ml-2 text-sm font-medium">
-                                                    Connected Banknotes
-                                                    <span
-                                                        className="ml-2 text-[7px] text-[#1f0d68] bg-muted px-1.5 py-0.5 rounded uppercase cursor-help"
-                                                        title="This is a demo metric"
-                                                    >
-                                                        demo
-                                                    </span>
-                                                </span>
+                                                <span className="ml-2 text-sm font-medium">Total DUAL issued</span>
                                             </div>
-                                            <ArrowDownRight className="h-4 w-4 text-red-500" />
+                                            <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(bank_notes_issued)}</div>
                                         </div>
-                                        <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(fiatInCirculation)}</div>
-                                        <div className="mt-1 text-xs text-muted-foreground">-0.8% MoM</div>
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
+                                    {/* Banknote Issue & Redeem */}
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        {/* Banknotes Issued */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="w-full sm:w-1/2"
+                                        >
+                                            <div className="p-4 bg-gray-50 rounded-lg h-full">
+                                                <div className="flex items-center text-gray-700">
+                                                    <Banknote className="h-5 w-5 text-purple-600" />
+                                                    <span className="ml-2 text-sm font-medium">DUAL Redeemed</span>
+                                                </div>
+                                                <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(bank_notes_redeemed)}</div>
+                                            </div>
+                                        </motion.div>
 
-                                {/* Without Connected Banknotes */}
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex-1">
-                                    <div className="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-full">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center text-gray-700">
-                                                <Banknote className="h-5 w-5 text-purple-500" />
-                                                <span className="ml-2 text-sm font-medium">
-                                                    Without Connected Banknotes
-                                                    <span
-                                                        className="ml-2 text-[7px] text-[#1f0d68] bg-muted px-1.5 py-0.5 rounded uppercase cursor-help"
-                                                        title="This is a demo metric"
-                                                    >
-                                                        demo
-                                                    </span>
-                                                </span>
+                                        {/* Banknotes Redeemed */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="w-full sm:w-1/2"
+                                        >
+                                            <div className="p-4 bg-red-50 rounded-lg h-full">
+                                                <div className="flex items-center text-gray-700">
+                                                    <Banknote className="h-5 w-5 text-rose-500" />
+                                                    <span className="ml-2 text-sm font-medium">Central Bank DUAL</span>
+                                                </div>
+                                                <div className="mt-2 text-2xl font-bold text-gray-900">
+                                                    {formatCurrency(bank_notes_issued - bank_notes_redeemed)}
+                                                </div>
                                             </div>
-                                            <ArrowUpRight className="h-4 w-4 text-green-500" />
-                                        </div>
-                                        <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(centralBankHoldings)}</div>
-                                        <div className="mt-1 text-xs text-muted-foreground">+1.5% MoM</div>
+                                        </motion.div>
                                     </div>
-                                </motion.div>
+                                </div>
                             </div>
+                            {/* Row 2: Total Balance by Bank */}
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                                <div className="p-4 bg-red-50 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center text-gray-700">
+                                            <Banknote className="h-5 w-5 text-primary" />
+                                            <span className="ml-2 text-sm font-medium">Total Central Bank Holdings</span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(centralBankTotalHoldings)}</div>
+                                </div>
+                            </motion.div>
                         </div>
                     </CardContent>
                 </Card>
