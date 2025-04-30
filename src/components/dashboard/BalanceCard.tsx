@@ -128,19 +128,19 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
             }
 
             if (sender.role === 'central_bank') {
-                const { data: tokenData, error: receiverError } = await supabase.from('TokenSupply').select('*').eq('id', 1);
+                const { data: tokenSupply, error: receiverError } = await supabase.from('TokenSupply').select('*').single();
+                const { total_minted, distributed, bank_notes_issued, bank_notes_redeemed } = tokenSupply;
 
-                const tokenMinted = tokenData[0].total_minted;
-                const tokenInCirculation = tokenData[0].in_circulation;
-                const tokenBalance = tokenMinted - tokenInCirculation;
+                // const banknoteTokens = bank_notes_issued ;
+                const nonNoteTokens = total_minted - distributed - bank_notes_issued;
 
-                if (tokenBalance < parsedAmount) {
+                if (nonNoteTokens < parsedAmount) {
                     setAmountError('Insufficient funds.');
                     throw new Error('Insufficient funds');
                 }
                 const { error: senderUpdateError } = await supabase
                     .from('TokenSupply')
-                    .update({ in_circulation: tokenInCirculation + parsedAmount })
+                    .update({ distributed: distributed + parsedAmount })
                     .eq('id', 1);
                 const { error: receiverUpdateError } = await supabase
                     .from('Users')
@@ -150,7 +150,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     throw new Error('Balance update failed.');
                 }
 
-                setCurrentBalance(tokenBalance - parsedAmount);
+                setCurrentBalance(nonNoteTokens - parsedAmount);
             }
             const type = sender.role + '_to_' + receiver.role;
 
