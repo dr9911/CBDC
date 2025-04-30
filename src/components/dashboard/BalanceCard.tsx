@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Send, Loader2, QrCode, Shield } from 'lucide-react';
+import { Plus, Send, Loader2, QrCode, Shield, BadgeCheck, Wallet } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     const [isQRModalOpen, setQRModalOpen] = useState(false);
     const [showReceiveDialog, setShowReceiveDialog] = useState(false);
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [showDetailsBankNote, setShowDetailsBankNote] = useState(false);
+    const [successfulRedeem, setSuccessfulRedeem] = useState(false);
     const [qrData, setQRData] = useState(null);
 
     const [sendRecipient, setSendRecipient] = useState('');
@@ -42,28 +44,69 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
 
     useEffect(() => {
         setCurrentBalance(initialBalance);
-    }, [initialBalance]);
+    });
 
-    useEffect(() => {
-        setSendRecipient('');
-        setSendAmount('');
-        setRecipientError('');
-        setAmountError('');
-        setGeneralError('');
-        setIsSending(false);
-    }, [showSendDialog]);
+    // useEffect(() => {
+    //     setSendRecipient('');
+    //     setSendAmount('');
+    //     setRecipientError('');
+    //     setAmountError('');
+    //     setGeneralError('');
+    //     setIsSending(false);
+    // }, [showSendDialog]);
 
     // Handle QR Code Data
     function handleDataFromQR(data: string) {
         console.log('QR Code data:', data);
         addToBalance(data);
+        if (data.includes('https://')) {
+            setShowDetailsBankNote(true);
+        } else {
+            setSuccessfulRedeem(true);
+            addToBalance(data);
+        }
+
         setQRModalOpen(false);
     }
-    function addToBalance(data: string) {
+
+    async function addToBalance(data: string) {
         const valueToAdd = 20;
-        const parsedData = parseFloat(data);
-        setCurrentBalance((prevBalance) => prevBalance + valueToAdd);
+
+        const { error: receiverError } = await supabase
+            .from('Users')
+            .update({ balance: currentUser.balance + valueToAdd })
+            .eq('id', currentUser.id);
+
+        if (receiverError) {
+            console.error('Error updating balance:', receiverError);
+            toast.error('Failed to add balance.');
+            return;
+        }
+        const updatedUser = { ...currentUser, balance: currentUser.balance + valueToAdd };
+        setCurrentBalance(currentUser.balance + valueToAdd);
+        setCurrentUser(updatedUser);
+        const { data: tokenData, error: fetchError } = await supabase.from('TokenSupply').select('bank_notes_redeemed').eq('id', 1).single();
+
+        if (fetchError) {
+            console.error(fetchError);
+            return;
+        }
+
+        // Step 2: Update with new value
+        const newValue = tokenData.bank_notes_redeemed + valueToAdd;
+
+        const { error: updateError } = await supabase.from('TokenSupply').update({ bank_notes_redeemed: newValue }).eq('id', 1);
+
+        if (updateError) {
+            console.error(updateError);
+        }
     }
+
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount) + ' CBDC';
 
     const handleSendToken = async () => {
         setIsSending(true);
@@ -151,6 +194,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                 }
 
                 setCurrentBalance(nonNoteTokens - parsedAmount);
+                setCurrentUser({ ...currentUser });
             }
             const type = sender.role + '_to_' + receiver.role;
 
@@ -164,8 +208,6 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     type: type,
                 },
             ]);
-
-            setCurrentUser({ ...currentUser });
 
             if (transactionError) {
                 throw new Error('Transaction logging failed.');
@@ -194,7 +236,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-                    <motion.div className="text-2xl sm:text-3xl font-bold mb-4">{currentBalance.toFixed(2)}</motion.div>
+                    <motion.div className="text-2xl sm:text-3xl font-bold mb-4">{formatCurrency(currentBalance)}</motion.div>
                 </CardContent>
                 <CardFooter className="flex justify-between gap-2 p-3 sm:p-6">
                     <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm" onClick={() => setShowSendDialog(true)}>
@@ -205,7 +247,6 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </Button>
                 </CardFooter>
             </Card>
-
             <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
@@ -255,7 +296,6 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
             {/* <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
@@ -332,7 +372,6 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </DialogFooter>
                 </DialogContent>
             </Dialog> */}
-
             <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
@@ -375,11 +414,73 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
             {/* QR Code Scanner Modal */}
             <Dialog open={isQRModalOpen} onOpenChange={setQRModalOpen}>
                 <DialogContent>
                     <QRCodeScannerComponent onScanSuccess={handleDataFromQR} onCancel={() => setQRModalOpen(false)} />
+                </DialogContent>
+            </Dialog>
+            <Dialog open={showDetailsBankNote} onOpenChange={setShowDetailsBankNote}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle>DUAL Details</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                        <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">{/* You can put an icon here if needed */}</div>
+                        <h3 className="text-xl font-semibold">DUAL</h3>
+                        {/* <p className="text-center text-muted-foreground">Details of the DUAL.</p> */}
+                        <div className="bg-muted p-4 rounded-lg w-full space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Amount:</span>
+                                <span className="font-medium">20 DUALS</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Owner:</span>
+                                <span className="font-medium">Central Bank</span>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setShowDetailsBankNote(false)} className="w-full">
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            
+            <Dialog open={successfulRedeem} onOpenChange={setSuccessfulRedeem}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle>Redeem Successful</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                        <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                            <BadgeCheck className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-xl font-semibold">20 DUAL Deposited</h3>
+                        <p className="text-center text-muted-foreground">
+                            The bank note has been successfully redeemed and the amount has been added to your wallet.
+                        </p>
+                        <div className="bg-muted p-4 rounded-lg w-full space-y-2">
+                            <div className="flex items-center space-x-2">
+                                <Wallet className="text-muted-foreground h-5 w-5" />
+                                <span className="font-medium">Wallet credited with 20 DUAL</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                                <span>Time:</span>
+                                <span>{new Date().toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                                <span>Source:</span>
+                                <span>Central Bank</span>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setSuccessfulRedeem(false)} className="w-full">
+                            Close
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

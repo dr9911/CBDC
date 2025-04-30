@@ -6,7 +6,6 @@ import Home from './components/home';
 import LoginPage from './components/auth/LoginPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import routes from 'tempo-routes';
-import userData from '@/data/users.json';
 import { Toaster } from 'sonner';
 
 const CentralBankDashboard = lazy(() => import('./components/dashboard/CentralBankDashboard'));
@@ -31,8 +30,6 @@ function LoadingScreen({ title = 'Loading Dashboard', message = 'Preparing your 
 
 function App() {
     const { isAuthenticated, currentUser } = useAuth();
-    localStorage.setItem('users', JSON.stringify(userData));
-
     return (
         <>
             <Toaster position="top-center" duration={3000} richColors closeButton />
