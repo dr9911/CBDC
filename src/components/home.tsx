@@ -8,7 +8,6 @@ import TransactionList, { Transaction } from './dashboard/TransactionList';
 import TransactionForm from './transactions/TransactionForm';
 import QRCodeGenerator from './transactions/QRCodeGenerator';
 import { useAuth } from '@/context/AuthContext';
-import transactions from '@/data/transactions.json';
 import { supabase } from '@/utils/supabase';
 
 interface HomeProps {
@@ -28,23 +27,22 @@ interface HomeProps {
 }
 
 const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: HomeProps) => {
-    const { currentUser } = useAuth();
-    const [userData, setUserData] = useState<any>(null);
+    const { currentUser, setCurrentUser } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+    // useEffect(() => {
+    //     if (currentUser) {
+    //         setUserData(currentUser);
+    //     }
+    // }, [currentUser]);
     useEffect(() => {
-        if (currentUser) {
-            setUserData(currentUser);
-        }
-    }, [currentUser]);
-    useEffect(() => {
-        if (!userData?.id) return;
+        if (!currentUser?.id) return;
 
         const fetchTransactions = async () => {
             const { data: transactionsList, error } = await supabase
                 .from('Transactions')
                 .select('*, receiverName:Users(name)')
-                .or(`sender.eq.${userData.id},receiver.eq.${userData.id}`);
+                .or(`sender.eq.${currentUser.id},receiver.eq.${currentUser.id}`);
             localStorage.setItem('transactions', JSON.stringify(transactionsList));
             if (error) {
                 console.error('Error fetching transactions:', error);
@@ -57,14 +55,14 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
         };
 
         fetchTransactions();
-    }, [userData]);
+    }, [currentUser]);
 
     const transactionsList = localStorage.getItem('transactions');
     const parsedTransactions = transactionsList ? JSON.parse(transactionsList) : [];
 
-    const effectiveUserName = userName || userData?.name || 'John Doe';
-    const effectiveUserAvatar = userAvatar || userData?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=John`;
-    const userRole = userData?.role || 'user';
+    const effectiveUserName = userName || currentUser?.name || 'John Doe';
+    const effectiveUserAvatar = userAvatar || currentUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=John`;
+    const userRole = currentUser?.role || 'user';
 
     const handleViewTransaction = (id: string) => {
         console.log(`View transaction details for ID: ${id}`);
@@ -76,7 +74,7 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
         // In a real app, this would process the transaction
     };
 
-    if (!userData) {
+    if (!currentUser) {
         return <div>Loading user data...</div>;
     }
 
@@ -97,7 +95,7 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
                                 {/* Responsive flex layout */}
                                 <div className="flex flex-col md:flex-row md:items-start gap-5 mb-6 sm:mb-8">
                                     <div className="w-full md:w-1/2">
-                                        <BalanceCard balance={userData?.balance} />
+                                        <BalanceCard balance={currentUser?.balance} />
                                     </div>
                                     {userRole === 'user' && (
                                         <div className="w-full md:w-1/2">
