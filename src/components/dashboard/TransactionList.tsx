@@ -185,21 +185,29 @@ const TransactionList = ({
                             {showAllTransactions ? 'All transactions' : 'View and manage your transaction history'}
                         </CardDescription>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    {/* <div className="flex flex-col sm:flex-row gap-2">
                         <Button variant="outline" size="sm" onClick={() => alert('Export not implemented')}>
                             <Download className="mr-2 h-4 w-4" />
                             Export
                         </Button>
-                    </div>
+                    </div> */}
                 </div>
             </CardHeader>
+
             <CardContent className="p-4 sm:p-6">
+                {/* Top Filters */}
                 <div className="flex flex-col md:flex-row gap-4 mb-6">
                     <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input type="search" placeholder="Search ID, Party, Amount..." className="pl-8" value={searchQuery} onChange={handleSearchChange} />
+                        <Input
+                            type="search"
+                            placeholder="Search ID, Party, Amount..."
+                            className="pl-8 w-full"
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                        />
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                         <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                             <SelectTrigger className="w-full sm:w-[140px]">
                                 <SelectValue placeholder="Status" />
@@ -232,104 +240,119 @@ const TransactionList = ({
                     </div>
                 </div>
 
-                {/* Transactions list */}
-                <div className="rounded-md border overflow-x-auto">
-                    {/* Using min-w to ensure content doesn't wrap too aggressively on small screens */}
-                    <div className="min-w-[700px] lg:min-w-0">
-                        {/* Header Row */}
-                        <div className="grid grid-cols-12 gap-2 p-4 bg-muted/50 text-xs sm:text-sm font-medium text-muted-foreground sticky top-0 z-10">
-                            <div className="col-span-3 md:col-span-3">Timestamp</div>
-                            <div className="col-span-2 md:col-span-2">Direction</div>
-                            <div className="col-span-3 md:col-span-3 text-right">Amount</div>
-                            {/* Renamed Recipient to Counterparty */}
-                            <div className="hidden md:block md:col-span-2">Receiver</div>
-                            <div className="col-span-2 md:col-span-1 text-center">Status</div>
-                            {/* <div className="col-span-2 md:col-span-1 text-right">Actions</div> */}
+                {/* Transactions List */}
+                <div className="w-full overflow-x-auto">
+                    <div className="min-w-full">
+                        {/* Header */}
+                        <div className="hidden sm:grid grid-cols-12 gap-2 p-4 bg-muted/50 text-xs sm:text-sm font-medium text-muted-foreground sticky top-0 z-10">
+                            <div className="col-span-3">Timestamp</div>
+                            <div className="col-span-2 text-right">Amount</div>
+                            <div className="col-span-2">Direction</div>
+                            <div className="col-span-3">Receiver</div>
+                            <div className="col-span-2 text-center">Status</div>
                         </div>
 
-                        {/* Transaction Rows */}
+                        {/* Rows */}
                         {displayTransactions.length === 0 ? (
                             <div className="p-8 text-center text-muted-foreground">No transactions found matching your criteria.</div>
                         ) : (
                             <div className="divide-y">
                                 {displayTransactions.map((transaction) => {
                                     const direction = getTransactionDirection(transaction);
-                                    const counterpartyId = getCounterpartyId(transaction);
-                                    // const counterpartyDisplay = getUserDisplay(counterpartyId); // Use mapping if available
 
                                     return (
                                         <motion.div
                                             key={transaction.id}
-                                            className="grid grid-cols-12 gap-2 p-4 items-center text-xs sm:text-sm hover:bg-muted/50 transition-colors"
+                                            className="flex flex-col sm:grid sm:grid-cols-12 gap-2 p-4 text-xs sm:text-sm hover:bg-muted/50 transition-colors"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }} // Add exit animation if using Framer Motion's AnimatePresence
+                                            exit={{ opacity: 0 }}
                                             transition={{ duration: 0.2 }}
                                         >
-                                            {/* Timestamp */}
-                                            <div className="col-span-3 md:col-span-3 truncate" title={transaction.timestamp}>
-                                                {formatDate(transaction.timestamp)}
+                                            {/* Mobile stacked view */}
+                                            <div className="flex justify-between sm:hidden">
+                                                <span className="font-medium">Timestamp:</span>
+                                                <span>{formatDate(transaction.timestamp)}</span>
                                             </div>
-                                            {/* Direction */}
-                                            <div className="col-span-2 md:col-span-2">
-                                                <Badge
-                                                    variant={getTransactionDirection(transaction) === 'incoming' ? 'default' : 'secondary'}
-                                                    className={
-                                                        getTransactionDirection(transaction) === 'incoming'
-                                                            ? 'bg-green-100 text-green-800 hover:bg-green-100 text-xs'
-                                                            : 'bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs'
-                                                    }
-                                                >
-                                                    {getTransactionDirection(transaction) === 'incoming' ? 'Received' : 'Sent'}
-                                                </Badge>{' '}
-                                            </div>
-                                            {/* Amount */}
-                                            <div className="col-span-3 md:col-span-3 font-medium text-right">
+                                            <div className="flex justify-between sm:hidden">
+                                                <span className="font-medium">Amount:</span>
                                                 <span
                                                     className={
                                                         direction === 'incoming'
                                                             ? 'text-green-600'
                                                             : direction === 'outgoing'
-                                                              ? 'text-red-600' // Make outgoing red for clarity
-                                                              : 'text-foreground' // Neutral for internal/unknown
+                                                              ? 'text-red-600'
+                                                              : 'text-foreground'
                                                     }
                                                 >
                                                     {direction === 'incoming' ? '+' : direction === 'outgoing' ? '-' : ''}
                                                     {formatCurrency(transaction.amount, currency)}
                                                 </span>
                                             </div>
-                                            {/* Counterparty */}
-                                            <div className="hidden md:block md:col-span-2 truncate" title={transaction?.receiverName?.name}>
-                                                {/* {counterpartyDisplay} Using ID for now */}
-                                                {transaction?.receiverName?.name}
+                                            <div className="flex justify-between sm:hidden">
+                                                <span className="font-medium">Direction:</span>
+                                                <Badge
+                                                    variant={direction === 'incoming' ? 'default' : 'secondary'}
+                                                    className={
+                                                        direction === 'incoming'
+                                                            ? 'bg-green-100 text-green-800 hover:bg-green-100 text-xs'
+                                                            : 'bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs'
+                                                    }
+                                                >
+                                                    {direction === 'incoming' ? 'Received' : 'Sent'}
+                                                </Badge>
                                             </div>
-                                            {/* Status */}
-                                            <div className="col-span-2 md:col-span-1 text-center">
+                                            <div className="flex justify-between sm:hidden">
+                                                <span className="font-medium">Receiver:</span>
+                                                <span className="truncate" title={transaction?.receiverName?.name}>
+                                                    {transaction?.receiverName?.name}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between sm:hidden">
+                                                <span className="font-medium">Status:</span>
                                                 <Badge variant={getStatusBadgeVariant(transaction.status)} className="text-xs capitalize">
                                                     {transaction.status}
                                                 </Badge>
                                             </div>
-                                            {/* Actions */}
-                                            {/* <div className="col-span-2 md:col-span-1 text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            <span className="sr-only">Transaction Actions</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => onViewTransaction(transaction.id)}>
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            View Details
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => alert('Download Receipt not implemented')}>
-                                                            <Download className="mr-2 h-4 w-4" />
-                                                            Download Receipt
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div> */}
+
+                                            {/* Desktop grid view */}
+                                            <div className="hidden sm:block sm:col-span-3 truncate" title={transaction.timestamp}>
+                                                {formatDate(transaction.timestamp)}
+                                            </div>
+                                            <div className="hidden sm:block sm:col-span-2 font-medium text-right">
+                                                <span
+                                                    className={
+                                                        direction === 'incoming'
+                                                            ? 'text-green-600'
+                                                            : direction === 'outgoing'
+                                                              ? 'text-red-600'
+                                                              : 'text-foreground'
+                                                    }
+                                                >
+                                                    {direction === 'incoming' ? '+' : direction === 'outgoing' ? '-' : ''}
+                                                    {formatCurrency(transaction.amount, currency)}
+                                                </span>
+                                            </div>
+                                            <div className="hidden sm:block sm:col-span-2">
+                                                <Badge
+                                                    variant={direction === 'incoming' ? 'default' : 'secondary'}
+                                                    className={
+                                                        direction === 'incoming'
+                                                            ? 'bg-green-100 text-green-800 hover:bg-green-100 text-xs'
+                                                            : 'bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs'
+                                                    }
+                                                >
+                                                    {direction === 'incoming' ? 'Received' : 'Sent'}
+                                                </Badge>
+                                            </div>
+                                            <div className="hidden sm:block sm:col-span-3 truncate" title={transaction?.receiverName?.name}>
+                                                {transaction?.receiverName?.name}
+                                            </div>
+                                            <div className="hidden sm:block sm:col-span-2 text-center">
+                                                <Badge variant={getStatusBadgeVariant(transaction.status)} className="text-xs capitalize">
+                                                    {transaction.status}
+                                                </Badge>
+                                            </div>
                                         </motion.div>
                                     );
                                 })}
@@ -338,9 +361,8 @@ const TransactionList = ({
                     </div>
                 </div>
 
-                {/* Pagination / View All Link placeholder */}
+                {/* Pagination / Footer */}
                 <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2 pt-4 mt-4 border-t">
-                    {/* Optional: Show total count */}
                     <div className="text-xs text-muted-foreground">
                         {processedTransactions.length} transaction(s) found.
                         {maxRows && processedTransactions.length > maxRows ? ` Showing first ${maxRows}.` : ''}
@@ -352,7 +374,6 @@ const TransactionList = ({
                             </Button>
                         )}
                     </div>
-                    {/* Optional: Add actual pagination controls here */}
                     <div className="flex items-center space-x-2">
                         <Button variant="outline" size="sm" disabled>
                             Previous
