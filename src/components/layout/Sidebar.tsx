@@ -1,4 +1,3 @@
-// src/components/navigation/Sidebar.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,26 +6,34 @@ import {
     History,
     Settings,
     Banknote,
-    Box,
+    ArrowUpDown,
+    Landmark,
+    Network,
+    ScrollText,
+    LineChart,
+    BadgePercent,
+    AlertCircle,
+    FileSearch,
     FileText,
     Users,
-    Calendar,
-    Gavel,
-    TrendingUp,
-    ArrowUpDown,
     User,
-    LogOut,
+    UserCheck,
+    Wallet,
+    Box,
+    HelpCircle,
+    Headphones,
+    LifeBuoy,
+    BookOpen,
+    Lock,
     ChevronDown,
     ChevronRight,
-    HelpCircle,
+    LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-
 import TrustNoteDLogo from '../../../public/logos/TND2.png';
 import OrellFuslliLogo from '../../../public/logos/orell.png';
 
@@ -39,210 +46,240 @@ const Sidebar = ({ activePage = 'dashboard' }: SidebarProps) => {
     const navigate = useNavigate();
     const userRole = currentUser?.role || 'user';
 
-    const [liabilitiesOpen, setLiabilitiesOpen] = useState(false);
-    const [assetsOpen, setAssetsOpen] = useState(false);
-
+    const [dropdownOpen, setDropdownOpen] = useState<Record<string, boolean>>({});
+    const toggleDropdown = (key: string) => setDropdownOpen((prev) => ({ ...prev, [key]: !prev[key] }));
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
-    const baseMenuItems = [
-        {
-            id: 'dashboard',
-            label: 'Dashboard',
-            icon: <Home size={20} />,
-            path: userRole === 'central_bank' ? '/dashboard' : '/',
-            roles: ['user', 'commercial_bank', 'central_bank'],
-        },
-        { id: 'accounts', label: 'Accounts', icon: <CreditCard size={20} />, path: '/accounts', roles: ['user'] },
-        {
-            id: 'liabilities',
-            label: 'Liabilities',
-            icon: <Banknote size={20} />,
-            path: '/mint',
-            roles: ['central_bank'],
-            isDropdown: true,
-            isOpen: liabilitiesOpen,
-            toggle: () => setLiabilitiesOpen(!liabilitiesOpen),
-            submenu: [{ id: 'mint', label: 'Mint New Supply', icon: <Banknote size={20} />, path: '/mint', roles: ['central_bank'] }],
-        },
-        { id: 'transfer', label: 'Transfer', icon: <ArrowUpDown size={20} />, path: '/transfer', roles: ['central_bank'] },
-        { id: 'transactions', label: 'Transactions', icon: <History size={20} />, path: '/history', roles: ['user'] },
-        { id: 'history', label: 'Transaction History', icon: <History size={20} />, path: '/history', roles: ['commercial_bank', 'central_bank'] },
-        {
-            id: 'mintapproval',
-            label: 'Mint Events',
-            icon: <History size={20} />,
-            path: '/mint/approval',
-            roles: ['central_bank'],
-        },
-        {
-            id: 'assets',
-            label: 'Assets',
-            icon: <Box size={20} />,
-            path: '/assets',
-            roles: ['central_bank'],
-            isDropdown: true,
-            isOpen: assetsOpen,
-            toggle: () => setAssetsOpen(!assetsOpen),
-            submenu: [
-                { id: 'equity', label: 'Equity', icon: <TrendingUp size={20} />, path: '/assets/equity', roles: ['central_bank'], isDemo: true },
-                { id: 'transfer', label: 'Transfer', icon: <ArrowUpDown size={20} />, path: '/assets/transfer', roles: ['central_bank'] },
-            ],
-        },
-        { id: 'documents', label: 'Documents', icon: <FileText size={20} />, path: '/documents', roles: ['central_bank'], isDemo: true },
-        { id: 'memberships', label: 'Memberships', icon: <Users size={20} />, path: '/memberships', roles: ['central_bank'], isDemo: true },
-        { id: 'events', label: 'Events', icon: <Calendar size={20} />, path: '/events', roles: ['central_bank'], isDemo: true },
-        { id: 'governance', label: 'Governance', icon: <Gavel size={20} />, path: '/governance', roles: ['central_bank'], isDemo: true },
-        { id: 'markets', label: 'Markets', icon: <TrendingUp size={20} />, path: '/markets', roles: ['central_bank'], isDemo: true },
-        { id: 'account', label: 'Account', icon: <User size={20} />, path: '/account', roles: ['central_bank'], isDemo: true },
-        { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/settings', roles: ['user', 'commercial_bank', 'central_bank'] },
-    ];
+    let menuItems = [];
 
-    const menuItems = baseMenuItems.filter((item) => item.roles.includes(userRole));
-    const settingsItem = menuItems.find((item) => item.id === 'settings');
-    const otherItems = menuItems.filter((item) => item.id !== 'settings');
+    if (userRole === 'central_bank') {
+        menuItems = [
+            { id: 'dashboard', label: 'Dashboard', icon: <Home size={16} />, path: '/dashboard' },
+            {
+                id: 'monetary-operations',
+                label: 'Monetary Operations',
+                icon: <Landmark size={16} />,
+                isSection: true,
+                submenu: [
+                    {
+                        id: 'issuance-management',
+                        label: 'Issuance Management',
+                        icon: <Banknote size={16} />,
+                        isDropdown: true,
+                        submenu: [
+                            { id: 'mint', label: 'Mint New Supply', icon: <Banknote size={14} />, path: '/mint' },
+                            { id: 'mint-events', label: 'Mint Events', icon: <History size={14} />, path: '/mint/approval' },
+                        ],
+                    },
+                    {
+                        id: 'distribution-oversight',
+                        label: 'Distribution Oversight',
+                        icon: <Network size={16} />,
+                        isDropdown: true,
+                        submenu: [
+                            { id: 'transfer', label: 'Transfer', icon: <ArrowUpDown size={14} />, path: '/transfer' },
+                            { id: 'monitor-circulation', label: 'Monitor Circulation', icon: <ScrollText size={14} />, path: '/monitor', isDemo: true },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 'policy-compliance',
+                label: 'Policy & Compliance',
+                icon: <AlertCircle size={16} />,
+                isSection: true,
+                submenu: [
+                    {
+                        id: 'monetary-policy-tools',
+                        label: 'Monetary Policy Tools',
+                        icon: <BadgePercent size={16} />,
+                        isDropdown: true,
+                        submenu: [{ id: 'interest-rate', label: 'Interest Rate', icon: <BadgePercent size={14} />, path: '/interest-rate', isDemo: true }],
+                    },
+                    {
+                        id: 'regulatory-compliance',
+                        label: 'Regulatory Compliance',
+                        icon: <AlertCircle size={16} />,
+                        isDropdown: true,
+                        submenu: [
+                            { id: 'aml-cft', label: 'AML/CFT Monitoring', icon: <AlertCircle size={14} />, path: '/aml', isDemo: true },
+                            { id: 'audit-trails', label: 'Audit Trails', icon: <FileSearch size={14} />, path: '/audit', isDemo: true },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 'analytics-reporting',
+                label: 'Analytics & Reporting',
+                icon: <LineChart size={16} />,
+                isSection: true,
+                submenu: [
+                    { id: 'transaction-logs', label: 'Transaction Logs', icon: <ScrollText size={14} />, path: '/logs', isDemo: true },
+                    { id: 'economic-impact', label: 'Economic Impact', icon: <LineChart size={14} />, path: '/impact', isDemo: true },
+                ],
+            },
+            { id: 'settings', label: 'Settings', icon: <Settings size={16} />, path: '/settings' },
+        ];
+    } else if (userRole === 'commercial_bank') {
+        menuItems = [
+            { id: 'dashboard', label: 'Dashboard', icon: <Home size={16} />, path: '/commercial' },
+            {
+                id: 'financial-operations',
+                label: 'Financial Operations',
+                icon: <Wallet size={16} />,
+                isSection: true,
+                submenu: [
+                    { id: 'view-balance', label: 'View Balance', icon: <CreditCard size={14} />, path: '/home' },
+                    { id: 'history', label: 'Transaction History', icon: <History size={20} />, path: '/history' },
+                ],
+            },
+            {
+                id: 'customer-distribution',
+                label: 'Customer Distribution',
+                icon: <Users size={16} />,
+                isSection: true,
+                submenu: [
+                    { id: 'distribute-cbdc', label: 'Transfer', icon: <ArrowUpDown size={14} />, path: '/home' },
+                    { id: 'monitor-distributions', label: 'Monitor Distributions', icon: <ScrollText size={14} />, path: '/distributions', isDemo: true },
+                    { id: 'internal-transfers', label: 'Internal Transfers', icon: <ArrowUpDown size={14} />, path: '/internal', isDemo: true },
+                    { id: 'liquidity-management', label: 'Liquidity Management', icon: <Box size={14} />, path: '/liquidity', isDemo: true },
+                ],
+            },
+            {
+                id: 'customer-management',
+                label: 'Customer Management',
+                icon: <UserCheck size={16} />,
+                isSection: true,
+                submenu: [
+                    { id: 'kyc-verification', label: 'KYC Verification', icon: <AlertCircle size={14} />, path: '/kyc', isDemo: true },
+                    { id: 'account-management', label: 'Account Management', icon: <User size={14} />, path: '/accounts/manage', isDemo: true },
+                ],
+            },
+            {
+                id: 'compliance-reporting',
+                label: 'Compliance & Reporting',
+                icon: <ScrollText size={16} />,
+                isSection: true,
+                submenu: [
+                    { id: 'regulatory-reports', label: 'Regulatory Reports', icon: <FileText size={14} />, path: '/reports', isDemo: true },
+                    { id: 'suspicious-activity', label: 'Suspicious Activity Monitoring', icon: <AlertCircle size={14} />, path: '/suspicious', isDemo: true },
+                ],
+            },
+            { id: 'settings', label: 'Settings', icon: <Settings size={16} />, path: '/settings' },
+            {
+                id: 'support',
+                label: 'Support',
+                icon: <LifeBuoy size={16} />,
+                isSection: true,
+                submenu: [
+                    { id: 'helpdesk', label: 'Helpdesk', icon: <HelpCircle size={14} />, path: '/help', isDemo: true },
+                    { id: 'tech-support', label: 'Technical Support', icon: <Headphones size={14} />, path: '/tech', isDemo: true },
+                ],
+            },
+        ];
+    } else {
+        menuItems = [
+            { id: 'home', label: 'Home', icon: <Home size={16} />, path: '/' },
+            { id: 'accounts', label: 'My Accounts', icon: <Wallet size={16} />, path: '/accounts' },
+            { id: 'history', label: 'Transaction History', icon: <History size={16} />, path: '/history' },
+            {
+                id: 'profile-settings',
+                label: 'Profile & Settings',
+                icon: <User size={16} />,
+                isDropdown: true,
+                submenu: [
+                    { id: 'profile-info', label: 'Profile Information', icon: <BookOpen size={14} />, path: '/profile' },
+                    { id: 'security-settings', label: 'Security Settings', icon: <Lock size={14} />, path: '/security' },
+                ],
+            },
+            {
+                id: 'support',
+                label: 'Support',
+                icon: <LifeBuoy size={16} />,
+                isDropdown: true,
+                submenu: [
+                    { id: 'help-center', label: 'Help Center', icon: <HelpCircle size={14} />, path: '/help-center', isDemo: true },
+                    { id: 'contact-support', label: 'Contact Support', icon: <LifeBuoy size={14} />, path: '/contact', isDemo: true },
+                ],
+            },
+        ];
+    }
+
+    const renderItems = (items: any[], depth = 0) =>
+        items.map((item) => {
+            const hasSubmenu = Array.isArray(item.submenu) && item.submenu.length > 0;
+            const isDropdown = hasSubmenu && depth > 0;
+
+            return (
+                <div key={item.id} className={depth === 0 ? 'mt-4' : ''}>
+                    {/* Top-level section with icon and always-visible children */}
+                    {hasSubmenu && depth === 0 ? (
+                        <>
+                            <div className="flex items-center gap-1.5 px-2 py-1.5 mt-4 text-sm">
+                                {item.icon}
+                                <span>{item.label}</span>
+                            </div>
+                            <div className="pl-4">{renderItems(item.submenu, depth + 1)}</div>
+                        </>
+                    ) : isDropdown ? (
+                        <>
+                            {/* Nested items (grandchildren) with dropdown toggle */}
+                            <Button variant="ghost" className="w-full justify-between text-xs px-2 py-1.5 mt-2" onClick={() => toggleDropdown(item.id)}>
+                                <div className="flex items-center gap-1.5">
+                                    {item.icon}
+                                    <span>{item.label}</span>
+                                </div>
+                                {dropdownOpen[item.id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            </Button>
+                            {dropdownOpen[item.id] && <div className="pl-5">{renderItems(item.submenu, depth + 1)}</div>}
+                        </>
+                    ) : (
+                        // Regular link/button item
+                        <Button
+                            variant={activePage === item.id ? 'secondary' : 'ghost'}
+                            className={`w-full justify-start text-xs px-2 py-1.5 ${depth === 1 ? 'mt-2' : ''}`}
+                            onClick={() => {
+                                if (item.isDemo) toast.info('This section is for demonstration purposes only.');
+                                else navigate(item.path);
+                            }}
+                        >
+                            <div className="flex items-center gap-1.5">
+                                {item.icon}
+                                <span className="truncate">{item.label}</span>
+                                {item.isDemo && (
+                                    <span className="ml-auto text-[7px] bg-muted px-1.5 py-0.5 rounded-full uppercase" style={{ color: '#1f0d68' }}>
+                                        demo
+                                    </span>
+                                )}
+                            </div>
+                        </Button>
+                    )}
+                </div>
+            );
+        });
 
     return (
-        <aside className="h-full w-[280px] bg-background border-r border-border flex flex-col p-4 overflow-y-auto">
-            <div className="flex items-center mb-8 px-2">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center mr-3">
-                    <CreditCard className="text-primary-foreground" size={20} />
+        <aside className="h-full w-[280px] bg-background border-r flex flex-col p-4 overflow-y-auto">
+            <div className="flex items-center mb-6 px-2 gap-3">
+                <div className="h-9 w-9 bg-primary flex items-center justify-center rounded-full">
+                    <CreditCard className="text-primary-foreground" size={16} />
                 </div>
                 <div>
-                    <h1 className="font-bold text-xl">TND Platform</h1>
-                    <p className="text-xs text-muted-foreground">CBDC Dashboard</p>
+                    <h1 className="font-bold text-lg">TND Platform</h1>
+                    <p className="text-[10px] text-muted-foreground">CBDC Dashboard</p>
                 </div>
             </div>
 
             <div className="mb-4 px-2">
-                <Badge variant="outline" className="w-full justify-center py-1">
+                <Badge variant="outline" className="w-full justify-center text-xs py-1">
                     {userRole === 'central_bank' ? 'Central Bank Access' : userRole === 'commercial_bank' ? 'Commercial Bank Access' : 'User Access'}
                 </Badge>
             </div>
 
-            <nav className="space-y-1 mb-6">
-                {otherItems.map((item) => (
-                    <React.Fragment key={item.id}>
-                        {item.isDropdown ? (
-                            <div className="space-y-1">
-                                <Button
-                                    type="button"
-                                    variant={activePage === item.id || item.submenu?.some((sub) => activePage === sub.id) ? 'secondary' : 'ghost'}
-                                    className={`w-full justify-between ${activePage === item.id ? 'font-medium' : ''}`}
-                                    onClick={item.toggle}
-                                >
-                                    <span className="flex items-center">
-                                        <span className="mr-3">{item.icon}</span>
-                                        {item.label}
-                                    </span>
-                                    {item.isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                </Button>
-                                {item.isOpen && (
-                                    <div className="pl-8 space-y-1">
-                                        {item.submenu!.map((sub) => (
-                                            <Button
-                                                key={sub.id}
-                                                type="button"
-                                                variant={activePage === sub.id ? 'secondary' : 'ghost'}
-                                                className="w-full justify-between text-sm"
-                                                onClick={() => {
-                                                    if (sub.isDemo) {
-                                                        toast.info('This section is for demonstration purposes only. Feature not implemented.');
-                                                    } else {
-                                                        navigate(sub.path);
-                                                    }
-                                                }}
-                                            >
-                                                <div className="flex items-center">
-                                                    <span className="mr-2">{sub.icon}</span>
-                                                    <span>{sub.label}</span>
-                                                </div>
-                                                {sub.isDemo && (
-                                                    <span
-                                                        className="text-[7px] bg-muted px-1.5 py-0.5 rounded-full uppercase cursor-help"
-                                                        style={{ color: '#1f0d68' }}
-                                                        title="This demo is not working"
-                                                    >
-                                                        demo
-                                                    </span>
-                                                )}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <Button
-                                type="button"
-                                variant={activePage === item.id ? 'secondary' : 'ghost'}
-                                className="w-full justify-between"
-                                onClick={() => {
-                                    if (item.isDemo) {
-                                        toast.info('This section is for demonstration purposes only. Feature not implemented.');
-                                    } else {
-                                        navigate(item.path);
-                                    }
-                                }}
-                            >
-                                <div className="flex items-center">
-                                    <span className="mr-3">{item.icon}</span>
-                                    <span>{item.label}</span>
-                                </div>
-                                {item.isDemo && (
-                                    <span
-                                        className="text-[7px] bg-muted px-1.5 py-0.5 rounded-full uppercase cursor-help"
-                                        style={{ color: '#1f0d68' }}
-                                        title="This demo is not working"
-                                    >
-                                        demo
-                                    </span>
-                                )}
-                            </Button>
-                        )}
-                    </React.Fragment>
-                ))}
-
-                <Separator className="my-4" />
-
-                {settingsItem && (
-                    <Button
-                        type="button"
-                        variant={activePage === settingsItem.id ? 'secondary' : 'ghost'}
-                        className="w-full justify-between"
-                        onClick={() => navigate(settingsItem.path)}
-                    >
-                        <div className="flex items-center">
-                            <span className="mr-3">{settingsItem.icon}</span>
-                            <span>{settingsItem.label}</span>
-                        </div>
-                    </Button>
-                )}
-
-                <Button
-                    type="button"
-                    variant={activePage === 'help' ? 'secondary' : 'ghost'}
-                    className="w-full justify-between"
-                    onClick={() => {
-                        toast.info('This section is for demonstration purposes only. Feature not implemented.');
-                    }}
-                >
-                    <div className="flex items-center">
-                        <span className="mr-3">
-                            <HelpCircle size={20} />
-                        </span>
-                        <span>Help and support</span>
-                    </div>
-                    <span
-                        className="text-[7px] bg-muted px-1.5 py-0.5 rounded-full uppercase cursor-help"
-                        style={{ color: '#1f0d68' }}
-                        title="This demo is not working"
-                    >
-                        demo
-                    </span>
-                </Button>
-            </nav>
+            <nav className="space-y-1 mb-6">{renderItems(menuItems)}</nav>
 
             <Separator className="my-1" />
 
@@ -252,7 +289,6 @@ const Sidebar = ({ activePage = 'dashboard' }: SidebarProps) => {
                 <img src={OrellFuslliLogo} alt="Orell Fuslli" className="h-8" />
             </div>
 
-            <div className="flex-grow" />
             <Button variant="outline" className="w-full justify-start mt-auto" onClick={handleLogout}>
                 <LogOut size={20} className="mr-3" />
                 Logout

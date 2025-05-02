@@ -1,8 +1,28 @@
 // src/components/dashboard/CentralBankDashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ArrowDownRight, Banknote, Shield, Activity, Clock, CheckCircle, Inbox as InboxIcon, Info, TrendingUp, BarChart } from 'lucide-react';
+import {
+    ArrowUp,
+    ArrowDown,
+    Repeat,
+    ArrowUpRight,
+    ArrowDownRight,
+    Banknote,
+    Shield,
+    Activity,
+    Clock,
+    CheckCircle,
+    Inbox as InboxIcon,
+    Info,
+    TrendingUp,
+    BarChart,
+} from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
+import { Line, Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip as ChartTooltip, Legend } from 'chart.js';
+
+ChartJS.register(ArcElement, LineElement, PointElement, CategoryScale, LinearScale, ChartTooltip, Legend);
+
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -133,6 +153,63 @@ const CentralBankDashboard = () => {
         },
     ];
 
+    const chartData = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [
+            {
+                label: 'CBDC Transactions Volume',
+                data: [10, 65, 80, 70, 85, 90], // in millions
+                borderColor: '#3b82f6',
+                backgroundColor: (ctx: any) => {
+                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+                    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+                    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+                    return gradient;
+                },
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+            },
+        ],
+    };
+
+    const chartOptions = {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#111827',
+                titleFont: { size: 14 },
+                bodyFont: { size: 12 },
+                padding: 10,
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: (val: number) => `${val}m`,
+                },
+            },
+            x: {
+                grid: { display: false },
+            },
+        },
+    };
+
+    const donutData = {
+        datasets: [
+            {
+                label: 'CBDC Holdings Breakdown',
+                data: [distributed, centralBankTotalHoldings, banknoteTokens],
+                backgroundColor: ['#2563eb', '#6b7280', '#facc15'],
+                borderWidth: 1,
+            },
+        ],
+        labels: ['Distributed', 'Central Bank Holdings', 'DUAL'],
+    };
+
     return (
         <DashboardLayout activePage="dashboard" userName={currentUser?.name || 'Central Bank'} userAvatar={currentUser?.avatar || ''}>
             <div className="space-y-8 pb-8 px-4 sm:px-6">
@@ -146,20 +223,15 @@ const CentralBankDashboard = () => {
 
                 {/* Summary Metrics */}
                 <Card className="bg-white border border-gray-200 shadow-md">
-                    <Card className="bg-white border border-gray-200 shadow-md">
-                        <CardHeader className="px-6 py-4">
-                            <div className="bg-violet-50 rounded-t-lg px-6 py-4">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-3xl font-extrabold text-[#1f0d68] tracking-tight">
-                                        Total CBDC Supply: {formatCurrency(total_minted)} CBDC
-                                    </h2>
-                                    
-                                </div>
+                    <CardHeader className="px-6 py-4">
+                        <div className="bg-violet-50 rounded-t-lg px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-3xl font-extrabold text-[#1f0d68] tracking-tight">
+                                    Total CBDC Supply: {formatCurrency(total_minted)} CBDC
+                                </h2>
                             </div>
-                        </CardHeader>
-
-                        <CardContent>{/* ...rest of the original content stays the same */}</CardContent>
-                    </Card>
+                        </div>
+                    </CardHeader>
 
                     <CardContent>
                         <div className="flex flex-col gap-6">
@@ -231,7 +303,7 @@ const CentralBankDashboard = () => {
 
                                     {/* Banknote Issue & Redeem */}
                                     <div className="flex flex-col sm:flex-row gap-4">
-                                        {/* DUAL Issued */}
+                                        {/* DUAL Redeemed */}
                                         <motion.div
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
@@ -247,7 +319,7 @@ const CentralBankDashboard = () => {
                                             </div>
                                         </motion.div>
 
-                                        {/* Banknotes Redeemed */}
+                                        {/* Central Bank DUAL */}
                                         <motion.div
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
@@ -268,7 +340,7 @@ const CentralBankDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Row 2: Total Central Bank Holdings and Total in Circulation side by side */}
+                            {/* Row 2: Total Central Bank Holdings and Total in Circulation */}
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                                 <div className="flex gap-6">
                                     {/* Total Central Bank Holdings */}
@@ -294,98 +366,89 @@ const CentralBankDashboard = () => {
                     </CardContent>
                 </Card>
 
+                {/* Continue with other content like charts, recent transactions, and tasks/approvals */}
                 {/* Charts & Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card className="shadow-sm border border-gray-200">
-                        <CardHeader className="bg-gray-50 border-b">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="font-semibold">Liquidity Trends</CardTitle>
-                                    <CardDescription>6-month historical data</CardDescription>
-                                </div>
-                                <Button variant="outline" size="sm">
-                                    <BarChart className="h-4 w-4 mr-1" /> View Details
-                                </Button>
-                            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Wallet Distribution Chart */}
+                    <Card className="hover:shadow-xl transition-all">
+                        <CardHeader>
+                            <CardTitle>CBDC Wallet Value Distribution</CardTitle>
                         </CardHeader>
-                        <CardContent className="relative">
-                            <div className="h-56 w-full flex items-end justify-around px-4 pb-4">
-                                {[65, 40, 75, 50, 85, 60].map((h, i) => (
-                                    <div key={i} className="flex flex-col items-center group">
-                                        <div
-                                            className="w-6 bg-blue-500 rounded-t-md transition-all duration-300 group-hover:bg-blue-600"
-                                            style={{ height: `${h}%` }}
-                                        >
-                                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100">
-                                                {formatCurrency(h * 10000)}
-                                            </div>
-                                        </div>
-                                        <span className="mt-2 text-xs text-muted-foreground">{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][i]}</span>
+                        <CardContent>
+                            <div className="h-56 relative">
+                                <Doughnut
+                                    data={donutData}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: { legend: { display: false } },
+                                    }}
+                                />
+                            </div>
+                            <div className="flex justify-center gap-6 mt-4">
+                                {donutData.labels.map((label, index) => (
+                                    <div key={label} className="flex items-center gap-2">
+                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: donutData.datasets[0].backgroundColor[index] }} />
+                                        <span className="text-sm text-gray-600">{label}</span>
                                     </div>
                                 ))}
                             </div>
-                            <div className="absolute top-2 right-2 text-[10px] text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded-sm">Demo data</div>
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-sm border border-gray-200">
-                        <CardHeader className="bg-gray-50 border-b">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="font-semibold">Transaction Activity</CardTitle>
-                                    <CardDescription>Monthly volume analysis</CardDescription>
-                                </div>
-                                <Button variant="outline" size="sm">
-                                    <BarChart className="h-4 w-4 mr-1" /> View Details
-                                </Button>
-                            </div>
+                    {/* Transactions Volume Chart */}
+                    <Card className="hover:shadow-xl transition-all">
+                        <CardHeader>
+                            <CardTitle>CBDC Transactions Volume (Last 6 Months)</CardTitle>
                         </CardHeader>
-                        <CardContent className="relative">
-                            <div className="h-56 w-full flex items-end justify-around px-4 pb-4">
-                                {[65, 40, 75, 50, 85, 60].map((h, i) => (
-                                    <div key={i} className="flex flex-col items-center group">
-                                        <div
-                                            className="w-6 bg-blue-500 rounded-t-md transition-all duration-300 group-hover:bg-blue-600"
-                                            style={{ height: `${h}%` }}
-                                        >
-                                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100">
-                                                {formatCurrency(h * 10000)}
-                                            </div>
-                                        </div>
-                                        <span className="mt-2 text-xs text-muted-foreground">{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][i]}</span>
-                                    </div>
-                                ))}
+                        <CardContent>
+                            <div className="h-75 flex items-center justify-center">
+                                <Line data={chartData} options={chartOptions} />
                             </div>
-                            <div className="absolute top-2 right-2 text-[10px] text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded-sm">Demo data</div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Details Section */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    {/* Connected Banknotes Breakdown */}
-                    <Card className="border border-gray-200 shadow-sm">
-                        <CardHeader className="bg-gray-50 border-b pb-3 flex justify-between items-center">
-                            <CardTitle className="font-semibold">Connected Banknotes</CardTitle>
-                            <Badge variant="secondary" className="font-normal">
-                                {formatCurrency(digitalCbdcInCirculation)} in circulation
-                            </Badge>
+                {/* Transactions and Approvals */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Recent Transactions */}
+                    <Card className="hover:shadow-xl transition-all">
+                        <CardHeader>
+                            <CardTitle>Recent Transactions</CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-6 relative">
-                            <div className="grid grid-cols-3 gap-4">
-                                {[
-                                    { label: 'Denomination', value: 500_000, pct: 75 },
-                                    { label: 'Issued', value: 450_000, pct: 65 },
-                                    { label: 'Redeemed', value: 300_000, pct: 45 },
-                                ].map((b) => (
-                                    <div key={b.label} className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-                                        <h3 className="text-sm font-medium text-gray-500 mb-2">{b.label}</h3>
-                                        <div className="text-xl font-semibold mb-2">{formatCurrency(b.value)}</div>
-                                        <Progress value={b.pct} className="h-1 rounded-full" />
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="absolute top-2 right-2 text-[10px] text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded-sm">Demo data</div>
+                        <CardContent>
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-left text-gray-500 border-b">
+                                        <th className="py-2">Type</th>
+                                        <th className="py-2">Amount</th>
+                                        <th className="py-2">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    <tr>
+                                        <td className="py-2 flex items-center gap-2">
+                                            <ArrowUp className="text-green-500" size={16} /> Credit
+                                        </td>
+                                        <td className="py-2">75,000 TND</td>
+                                        <td className="py-2 text-green-600 font-medium">Completed</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="py-2 flex items-center gap-2">
+                                            <Repeat className="text-yellow-500" size={16} /> Transfer
+                                        </td>
+                                        <td className="py-2">10,000 TND</td>
+                                        <td className="py-2 text-yellow-600 font-medium">Pending</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="py-2 flex items-center gap-2">
+                                            <ArrowDown className="text-red-500" size={16} /> Debit
+                                        </td>
+                                        <td className="py-2">375,000 TND</td>
+                                        <td className="py-2 text-green-600 font-medium">Completed</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </CardContent>
                     </Card>
 
@@ -394,58 +457,64 @@ const CentralBankDashboard = () => {
                         <CardHeader className="bg-gray-50 border-b flex justify-between items-center pb-3">
                             <CardTitle className="font-semibold">Tasks & Approvals</CardTitle>
                         </CardHeader>
-                        <CardContent className="relative">
+                        <CardContent>
                             <Tabs defaultValue="todo">
-                                <TabsList className="grid grid-cols-3 mb-4">
+                                <TabsList className="grid grid-cols-3 mb-4 mt-4">
                                     <TabsTrigger value="todo">To Do</TabsTrigger>
                                     <TabsTrigger value="pending">Pending</TabsTrigger>
                                     <TabsTrigger value="done">Completed</TabsTrigger>
                                 </TabsList>
+
                                 <TabsContent value="todo">
                                     <div className="space-y-4">
-                                        {tasks.map((t) => (
-                                            <div key={t.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                                <div className="flex items-center">
-                                                    <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">{t.icon}</div>
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-gray-800">{t.title}</h4>
-                                                        <p className="text-xs text-gray-500">{t.subtitle}</p>
-                                                    </div>
+                                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            <div className="flex items-center">
+                                                <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                                    <InboxIcon className="h-5 w-5 text-indigo-600" />
                                                 </div>
-                                                <Badge variant="outline" className={`${t.badgeColor}`}>
-                                                    {t.badge}
-                                                </Badge>
+                                                <div>
+                                                    <h4 className="text-sm font-medium text-gray-800">Verify Customer Onboarding</h4>
+                                                    <p className="text-xs text-gray-500">New user awaiting verification</p>
+                                                </div>
                                             </div>
-                                        ))}
+                                            <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-indigo-200">
+                                                High
+                                            </Badge>
+                                        </div>
                                     </div>
                                 </TabsContent>
+
                                 <TabsContent value="pending">
-                                    {pendingApprovals.length > 0 ? (
+                                    {pendingApprovals.length === 0 ? (
+                                        <div className="flex flex-col items-center py-12 text-gray-400">
+                                            <Clock className="h-8 w-8 mb-2" />
+                                            <p>No pending approvals</p>
+                                        </div>
+                                    ) : (
                                         <div className="space-y-4">
-                                            {pendingApprovals.map((n) => (
-                                                <div key={n.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            {pendingApprovals.map((approval) => (
+                                                <div
+                                                    key={approval.id}
+                                                    className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                                                >
                                                     <div className="flex items-center">
-                                                        <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                                                            <Banknote className="h-5 w-5 text-amber-600" />
+                                                        <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                                                            <InboxIcon className="h-5 w-5 text-yellow-600" />
                                                         </div>
                                                         <div>
-                                                            <h4 className="text-sm font-medium text-gray-800">{n.message}</h4>
-                                                            <p className="text-xs text-gray-500">{new Date(n.created_at).toLocaleString()}</p>
+                                                            <h4 className="text-sm font-medium text-gray-800">{approval.title || 'Minting Request'}</h4>
+                                                            <p className="text-xs text-gray-500">{approval.description || 'Awaiting central bank approval'}</p>
                                                         </div>
                                                     </div>
-                                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-600 border-yellow-200">
+                                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-300">
                                                         Pending
                                                     </Badge>
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center py-12 text-gray-400">
-                                            <Clock className="h-8 w-8 mb-2" />
-                                            <p>No pending approvals</p>
-                                        </div>
                                     )}
                                 </TabsContent>
+
                                 <TabsContent value="done">
                                     <div className="flex flex-col items-center py-12 text-gray-400">
                                         <CheckCircle className="h-8 w-8 mb-2" />
@@ -453,7 +522,6 @@ const CentralBankDashboard = () => {
                                     </div>
                                 </TabsContent>
                             </Tabs>
-                            <div className="absolute top-2 right-2 text-[10px] text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded-sm">Demo data</div>
                         </CardContent>
                     </Card>
                 </div>

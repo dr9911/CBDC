@@ -2,19 +2,20 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useRoutes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import Home from './components/home';
 import LoginPage from './components/auth/LoginPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import routes from 'tempo-routes';
 import { Toaster } from 'sonner';
 
 const CentralBankDashboard = lazy(() => import('./components/dashboard/CentralBankDashboard'));
+const CommercialBankDashboard = lazy(() => import('./components/dashboard/CommercialBankDashboard'));
 const MintNewSupply = lazy(() => import('./components/minting/MintNewSupply'));
 const AccountsPage = lazy(() => import('./components/accounts/AccountsPage'));
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage'));
 const HistoryPage = lazy(() => import('./components/history/HistoryPage'));
 const MintApproval = lazy(() => import('./components/minting/MintApproval'));
 const Transfer = lazy(() => import('./components/dashboard/Transfer'));
+const Home = lazy(() => import('./components/home'));
 
 function LoadingScreen({ title = 'Loading Dashboard', message = 'Preparing your personalized view...' }: { title?: string; message?: string }) {
     return (
@@ -30,63 +31,65 @@ function LoadingScreen({ title = 'Loading Dashboard', message = 'Preparing your 
 
 function App() {
     const { isAuthenticated, currentUser } = useAuth();
+
+    const getRedirectPath = () => {
+        if (currentUser?.role === 'central_bank') return '/dashboard';
+        if (currentUser?.role === 'commercial_bank') return '/commercial';
+        return '/home';
+    };
+
     return (
         <>
             <Toaster position="top-center" duration={3000} richColors closeButton />
 
             <Suspense fallback={<LoadingScreen title="Loading App" message="Hang tight, we're almost there..." />}>
+                {/* Tempo routes - must be before other routes to work properly */}
+                {import.meta.env.VITE_TEMPO === 'true' && useRoutes(routes)}
+
                 <Routes>
-                    {/* — PUBLIC — */}
+                    {/* PUBLIC */}
+                    <Route path="/login" element={isAuthenticated ? <Navigate to={getRedirectPath()} replace /> : <LoginPage />} />
+
+                    {/* ROOT REDIRECT */}
+                    <Route path="/" element={<Navigate to={getRedirectPath()} replace />} />
+
+                    {/* HOME ROUTE */}
                     <Route
-                        path="/login"
+                        path="/home"
                         element={
-                            isAuthenticated ? (
-                                <Navigate
-                                    to={currentUser?.role === 'central_bank' ? '/dashboard' : currentUser?.role === 'commercial_bank' ? '/accounts' : '/'}
-                                    replace
-                                />
-                            ) : (
-                                <LoginPage />
-                            )
+                            <ProtectedRoute>
+                                <Suspense fallback={<LoadingScreen title="Loading Home" />}>
+                                    <Home />
+                                </Suspense>
+                            </ProtectedRoute>
                         }
                     />
 
-                    {/* — ROOT — */}
-                    <Route
-                        path="/"
-                        element={<ProtectedRoute>{currentUser?.role === 'central_bank' ? <Navigate to="/dashboard" replace /> : <Home />}</ProtectedRoute>}
-                    />
-
-                    {/* — DASHBOARD — */}
+                    {/* CENTRAL BANK DASHBOARD */}
                     <Route
                         path="/dashboard"
                         element={
-                            <ProtectedRoute>
-                                <Suspense fallback={<LoadingScreen />}>{currentUser?.role === 'central_bank' ? <CentralBankDashboard /> : <Home />}</Suspense>
+                            <ProtectedRoute requiredRole="central_bank">
+                                <Suspense fallback={<LoadingScreen />}>
+                                    <CentralBankDashboard />
+                                </Suspense>
                             </ProtectedRoute>
                         }
                     />
 
+                    {/* COMMERCIAL BANK DASHBOARD */}
                     <Route
-                        path="/transfer"
+                        path="/commercial"
                         element={
-                            <ProtectedRoute>
-                                <Suspense fallback={<LoadingScreen />}>{currentUser?.role === 'central_bank' ? <Transfer /> : <Home />}</Suspense>
+                            <ProtectedRoute requiredRole="commercial_bank">
+                                <Suspense fallback={<LoadingScreen title="Loading Commercial Bank Dashboard" />}>
+                                    <CommercialBankDashboard />
+                                </Suspense>
                             </ProtectedRoute>
                         }
                     />
 
-                    {/* — HISTORY — */}
-                    <Route
-                        path="/history"
-                        element={
-                            <ProtectedRoute>
-                                <HistoryPage />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    {/* — CENTRAL BANK ONLY ROUTES — */}
+                    {/* CENTRAL BANK ONLY ROUTES */}
                     <Route
                         path="/mint"
                         element={
@@ -103,8 +106,26 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+                    <Route
+                        path="/transfer"
+                        element={
+                            <ProtectedRoute requiredRole="central_bank">
+                                <Transfer />
+                            </ProtectedRoute>
+                        }
+                    />
 
-                    {/* — COMMERCIAL / USER ACCOUNTS — */}
+                    {/* HISTORY (SHARED) */}
+                    <Route
+                        path="/history"
+                        element={
+                            <ProtectedRoute>
+                                <HistoryPage />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* USER-ONLY ACCOUNTS */}
                     <Route
                         path="/accounts"
                         element={
@@ -114,7 +135,7 @@ function App() {
                         }
                     />
 
-                    {/* — PROFILE & SETTINGS — */}
+                    {/* PROFILE & SETTINGS */}
                     <Route
                         path="/profile"
                         element={
@@ -132,11 +153,9 @@ function App() {
                         }
                     />
 
-                    {/* — CATCH‑ALL — */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    {/* CATCH-ALL */}
+                    <Route path="*" element={<Navigate to={getRedirectPath()} replace />} />
                 </Routes>
-
-                {import.meta.env.VITE_TEMPO === 'true' && useRoutes(routes)}
             </Suspense>
         </>
     );
