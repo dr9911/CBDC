@@ -113,6 +113,7 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
                                     <TransactionList transactions={transactions} maxRows={5} onViewTransaction={handleViewTransaction} />
                                 </motion.div>
 
+                                {/* 
                                 {userRole === 'commercial_bank' && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
@@ -123,6 +124,7 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
                                         <CommercialBankOverview />
                                     </motion.div>
                                 )}
+                                    */}
                             </motion.div>
 
                             {/* Hidden sections */}

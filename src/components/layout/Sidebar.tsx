@@ -168,7 +168,7 @@ const Sidebar = ({ activePage = 'dashboard' }: SidebarProps) => {
                     { id: 'suspicious-activity', label: 'Suspicious Activity Monitoring', icon: <AlertCircle size={14} />, path: '/suspicious', isDemo: true },
                 ],
             },
-            { id: 'settings', label: 'Settings', icon: <Settings size={16} />, path: '/settings' },
+
             {
                 id: 'support',
                 label: 'Support',
@@ -179,6 +179,8 @@ const Sidebar = ({ activePage = 'dashboard' }: SidebarProps) => {
                     { id: 'tech-support', label: 'Technical Support', icon: <Headphones size={14} />, path: '/tech', isDemo: true },
                 ],
             },
+
+            { id: 'settings', label: 'Settings', icon: <Settings size={16} />, path: '/settings' },
         ];
     } else {
         menuItems = [

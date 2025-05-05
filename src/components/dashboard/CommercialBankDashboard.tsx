@@ -31,6 +31,47 @@ const CommercialBankDashboard = () => {
         fetchNotifications();
     }, [currentUser?.id]);
 
+    const [commercialBankHoldings, setCommercialBankHoldings] = useState<number>(0);
+    const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchBankHoldings = async () => {
+            if (!currentUser?.id) return;
+
+            const { data, error } = await supabase.from('Users').select('balance').eq('id', currentUser.id).single(); // since we're fetching only one row
+
+            if (error) {
+                console.error('Error fetching bank balance:', error);
+                return;
+            }
+            setCommercialBankHoldings(data?.balance || 0);
+        };
+
+        fetchBankHoldings();
+    }, [currentUser?.id]);
+
+    useEffect(() => {
+        const fetchRecentTransactions = async () => {
+            if (!currentUser?.id) return;
+
+            const { data, error } = await supabase
+                .from('Transactions')
+                .select('type, amount, status, sender, receiver')
+                .or(`sender.eq.${currentUser.id},receiver.eq.${currentUser.id}`)
+                .order('created_at', { ascending: false })
+                .limit(4);
+
+            if (error) {
+                console.error('Error fetching user transactions:', error);
+                return;
+            }
+
+            setRecentTransactions(data || []);
+        };
+
+        fetchRecentTransactions();
+    }, [currentUser?.id]);
+
     const chartData = {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
         datasets: [
@@ -108,147 +149,204 @@ const CommercialBankDashboard = () => {
 
     return (
         <DashboardLayout activePage="dashboard">
-            <div className="p-6 space-y-6">
-                <h1 className="text-3xl font-bold">Commercial Bank Dashboard</h1>
+            <div className="px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Commercial Bank Dashboard</h1>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                     <Card className="hover:shadow-xl transition-all">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <Banknote className="text-blue-500 bg-blue-100 p-1 rounded-full" size={24} />
+                            <CardTitle className="flex items-center gap-2 sm:gap-3">
+                                <Banknote className="text-blue-500 bg-blue-100 p-1 rounded-full" size={20} />
                                 Total CBDC Holding
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-3xl font-bold text-gray-800">1,250,000 TND</p>
+                            <p className="text-2xl sm:text-3xl font-bold text-gray-800">
+                                {new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }).format(
+                                    commercialBankHoldings
+                                )}{' '}
+                                CBDC
+                            </p>
                         </CardContent>
                     </Card>
 
-                    <Card className="hover:shadow-xl transition-all">
+                    <Card className="hover:shadow-xl transition-all relative">
+                        <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300 uppercase tracking-wide">
+                            demo
+                        </span>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <TrendingUp className="text-green-500 bg-green-100 p-1 rounded-full" size={24} />
+                            <CardTitle className="flex items-center gap-2 sm:gap-3">
+                                <TrendingUp className="text-green-500 bg-green-100 p-1 rounded-full" size={20} />
                                 Transfers Processed
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-3xl font-bold text-gray-800">8,000</p>
+                            <p className="text-2xl sm:text-3xl font-bold text-gray-800">8,000</p>
                         </CardContent>
                     </Card>
 
-                    <Card className="hover:shadow-xl transition-all">
+                    <Card className="hover:shadow-xl transition-all relative">
+                        <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300 uppercase tracking-wide">
+                            demo
+                        </span>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <Users className="text-purple-500 bg-purple-100 p-1 rounded-full" size={24} />
+                            <CardTitle className="flex items-center gap-2 sm:gap-3">
+                                <Users className="text-purple-500 bg-purple-100 p-1 rounded-full" size={20} />
                                 Retail Customers
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-3xl font-bold text-gray-800">12,300</p>
+                            <p className="text-2xl sm:text-3xl font-bold text-gray-800">12,300</p>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="hover:shadow-xl transition-all">
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <Card className="hover:shadow-xl transition-all relative">
+                        <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300 uppercase tracking-wide">
+                            demo
+                        </span>
                         <CardHeader>
-                            <CardTitle>CBDC Wallet Value Distribution</CardTitle>
+                            <CardTitle>Commercial Bank CBDC Wallet Distribution</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="h-56 relative">
+                            <div className="relative w-full h-[180px] sm:h-[220px] md:h-[240px] lg:h-[260px] mt-4">
                                 <Doughnut
                                     data={donutData}
                                     options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }}
                                 />
                             </div>
-                            <div className="flex justify-center gap-6 mt-4">
+                            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-8">
                                 {donutData.labels.map((label, index) => (
                                     <div key={label} className="flex items-center gap-2">
-                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: donutData.datasets[0].backgroundColor[index] }} />
-                                        <span className="text-sm text-gray-600">{label}</span>
+                                        <div
+                                            className="w-3 h-3 sm:w-4 sm:h-4 rounded-full"
+                                            style={{ backgroundColor: donutData.datasets[0].backgroundColor[index] }}
+                                        />
+                                        <span className="text-xs sm:text-sm text-gray-600">{label}</span>
                                     </div>
                                 ))}
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="hover:shadow-xl transition-all">
+                    <Card className="hover:shadow-xl transition-all relative">
+                        <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300 uppercase tracking-wide">
+                            demo
+                        </span>
                         <CardHeader>
                             <CardTitle>CBDC Transactions Volume (Last 6 Months)</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="h-70 flex items-center justify-center">
-                                <Line data={chartData} options={chartOptions} />
+                            {/* Responsive chart container with fixed aspect ratio */}
+                            <div className="relative w-full" style={{ paddingBottom: '50%' }}>
+                                <Line
+                                    data={chartData}
+                                    options={{ ...chartOptions, responsive: true, maintainAspectRatio: false }}
+                                    className="absolute inset-0 w-full h-full"
+                                />
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="hover:shadow-xl transition-all">
+                {/* Transactions and Tasks */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <Card className="hover:shadow-xl transition-all overflow-x-auto">
                         <CardHeader>
-                            <CardTitle>Recent Transactions</CardTitle>
+                            <CardTitle className="text-sm sm:text-base">Recent Transactions</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-left text-gray-500 border-b">
-                                        <th className="py-2">Type</th>
-                                        <th className="py-2">Amount</th>
-                                        <th className="py-2">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    <tr>
-                                        <td className="py-2 flex items-center gap-2">
-                                            <ArrowUp className="text-green-500" size={16} /> Credit
-                                        </td>
-                                        <td className="py-2">75,000 TND</td>
-                                        <td className="py-2 text-green-600 font-medium">Completed</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="py-2 flex items-center gap-2">
-                                            <Repeat className="text-yellow-500" size={16} /> Transfer
-                                        </td>
-                                        <td className="py-2">10,000 TND</td>
-                                        <td className="py-2 text-yellow-600 font-medium">Pending</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="py-2 flex items-center gap-2">
-                                            <ArrowDown className="text-red-500" size={16} /> Debit
-                                        </td>
-                                        <td className="py-2">375,000 TND</td>
-                                        <td className="py-2 text-green-600 font-medium">Completed</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-xs sm:text-sm md:text-base min-w-[350px]">
+                                    <thead>
+                                        <tr className="text-left text-gray-500 border-b">
+                                            <th className="py-2">Type</th>
+                                            <th className="py-2">Amount</th>
+                                            <th className="py-2">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {recentTransactions.map((tx, index) => {
+                                            let label = 'Sent';
+                                            let icon = <ArrowUp className="text-green-500" size={16} />;
+
+                                            switch (tx.type) {
+                                                case 'user_to_user':
+                                                case 'commercial_bank_to_user':
+                                                case 'commercial_bank_to_commercial_bank':
+                                                    label = 'Sent';
+                                                    icon = <ArrowUp className="text-green-500" size={16} />;
+                                                    break;
+                                                case 'central_bank_to_user':
+                                                case 'central_bank_to_commercial_bank':
+                                                    label = 'Received';
+                                                    icon = <ArrowDown className="text-blue-500" size={16} />;
+                                                    break;
+                                                default:
+                                                    label = 'Sent';
+                                                    icon = <Repeat className="text-gray-500" size={16} />;
+                                            }
+
+                                            return (
+                                                <tr key={index}>
+                                                    <td className="py-2 flex items-center gap-2">
+                                                        {icon}
+                                                        <span>{label}</span>
+                                                    </td>
+                                                    <td className="py-2">{Number(tx.amount).toLocaleString('de-DE', { minimumFractionDigits: 2 })} CBDC</td>
+                                                    <td className={`py-2 font-medium ${tx.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                        {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-gray-200 shadow-sm">
-                        <CardHeader className="bg-gray-50 border-b flex justify-between items-center pb-3">
-                            <CardTitle className="font-semibold">Tasks & Approvals</CardTitle>
+                    <Card className="border border-gray-200 shadow-sm relative">
+                        <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300 uppercase tracking-wide">
+                            demo
+                        </span>
+                        <CardHeader className="bg-gray-50 border-b flex justify-between items-center p-2 sm:p-3">
+                            <CardTitle className="text-sm sm:text-base font-semibold">Tasks & Approvals</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Tabs defaultValue="todo">
-                                <TabsList className="grid grid-cols-3 mb-4 mt-4">
-                                    <TabsTrigger value="todo">To Do</TabsTrigger>
-                                    <TabsTrigger value="pending">Pending</TabsTrigger>
-                                    <TabsTrigger value="done">Completed</TabsTrigger>
+                            <Tabs defaultValue="todo" className="space-y-2 sm:space-y-4">
+                                <TabsList className="grid grid-cols-3 mb-2 sm:mb-4">
+                                    <TabsTrigger value="todo" className="text-xs sm:text-sm">
+                                        To Do
+                                    </TabsTrigger>
+                                    <TabsTrigger value="pending" className="text-xs sm:text-sm">
+                                        Pending
+                                    </TabsTrigger>
+                                    <TabsTrigger value="done" className="text-xs sm:text-sm">
+                                        Completed
+                                    </TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="todo">
-                                    <div className="space-y-4">
+                                    <div className="space-y-2 sm:space-y-4">
                                         {tasks.map((task) => (
-                                            <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            <div
+                                                key={task.id}
+                                                className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200"
+                                            >
                                                 <div className="flex items-center">
-                                                    <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">{task.icon}</div>
+                                                    <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-gray-100 flex items-center justify-center mr-2 sm:mr-3">
+                                                        {task.icon}
+                                                    </div>
                                                     <div>
-                                                        <h4 className="text-sm font-medium text-gray-800">{task.title}</h4>
-                                                        <p className="text-xs text-gray-500">{task.description}</p>
+                                                        <h4 className="text-xs sm:text-sm font-medium text-gray-800">{task.title}</h4>
+                                                        <p className="text-[10px] sm:text-xs text-gray-500">{task.description}</p>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-indigo-200">
+                                                <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-indigo-200 text-xs sm:text-sm">
                                                     {task.priority}
                                                 </Badge>
                                             </div>
@@ -257,16 +355,16 @@ const CommercialBankDashboard = () => {
                                 </TabsContent>
 
                                 <TabsContent value="pending">
-                                    <div className="flex flex-col items-center py-12 text-gray-400">
-                                        <Clock className="h-8 w-8 mb-2" />
-                                        <p>No pending approvals</p>
+                                    <div className="flex flex-col items-center py-8 sm:py-12 text-gray-400">
+                                        <Clock className="h-6 w-6 sm:h-8 sm:w-8 mb-2" />
+                                        <p className="text-xs sm:text-sm">No pending approvals</p>
                                     </div>
                                 </TabsContent>
 
                                 <TabsContent value="done">
-                                    <div className="flex flex-col items-center py-12 text-gray-400">
-                                        <CheckCircle className="h-8 w-8 mb-2" />
-                                        <p>No completed tasks</p>
+                                    <div className="flex flex-col items-center py-8 sm:py-12 text-gray-400">
+                                        <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mb-2" />
+                                        <p className="text-xs sm:text-sm">No completed tasks</p>
                                     </div>
                                 </TabsContent>
                             </Tabs>
