@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Send, Loader2, QrCode, Shield, BadgeCheck, Wallet } from 'lucide-react';
+import { Plus, Send, Loader2, QrCode, Shield, BadgeCheck, Wallet, Check } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,10 +24,13 @@ interface BalanceCardProps {
 const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: BalanceCardProps) => {
     const [currentBalance, setCurrentBalance] = useState(initialBalance);
     const { currentUser, setCurrentUser } = useAuth();
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
     // const { toast } = useToast();
 
     const [showSendDialog, setShowSendDialog] = useState(false);
     const [isQRModalOpen, setQRModalOpen] = useState(false);
+    const [showLoadingDialog, setShowLoadingDialog] = useState(false);
     const [showReceiveDialog, setShowReceiveDialog] = useState(false);
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const [showDetailsBankNote, setShowDetailsBankNote] = useState(false);
@@ -41,6 +44,8 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     const [amountError, setAmountError] = useState('');
     const [generalError, setGeneralError] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [transactionSuccess, setTransactionSuccess] = useState(false);
+    const [showFailureDialog, setShowFailureDialog] = useState(false);
 
     useEffect(() => {
         setCurrentBalance(initialBalance);
@@ -109,18 +114,21 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
         }).format(amount) + ' CBDC';
 
     const handleSendToken = async () => {
+        setShowLoadingDialog(true);
         setIsSending(true);
         setRecipientError('');
         setAmountError('');
         setGeneralError('');
+        setTransactionSuccess(false);
 
         try {
-            const parsedAmount = parseFloat(String(sendAmount));
+            const parsedAmount = parseFloat(sendAmount);
 
             if (!sendRecipient) {
-                setRecipientError('Recipient username is required.');
+                setRecipientError('Recipient ID is required.');
                 throw new Error('Validation failed');
             }
+
             if (isNaN(parsedAmount) || parsedAmount <= 0) {
                 setAmountError('Please enter a valid positive amount.');
                 throw new Error('Validation failed');
@@ -128,102 +136,91 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
 
             const { data: sender, error: senderError } = await supabase.from('Users').select('*').eq('id', currentUser?.id).single();
 
+            if (senderError || !sender) throw new Error('Sender not found.');
+
             const { data: receiver, error: receiverError } = await supabase.from('Users').select('*').eq('id', sendRecipient).single();
 
-            if (senderError || !sender) {
-                setGeneralError('Your user data could not be found.');
-                throw senderError || new Error('Sender fetch failed');
-            }
-
             if (receiverError || !receiver) {
-                setRecipientError('Recipient username not found.');
-                throw receiverError || new Error('Receiver fetch failed');
+                setRecipientError('Recipient not found.');
+                throw new Error('Recipient does not exist');
             }
 
             if (sender.id === receiver.id) {
                 setRecipientError('You cannot send funds to yourself.');
-                throw new Error('Self-send attempt');
+                throw new Error('Invalid recipient');
             }
 
             if (sender.role === 'user' || sender.role === 'commercial_bank') {
-                if (sender.balance < parsedAmount) {
+                const { data: balanceCheck, error: balanceError } = await supabase.from('Users').select('balance').eq('id', sender.id).single();
+
+                if (balanceError || !balanceCheck) throw new Error('Balance fetch error');
+
+                if (balanceCheck.balance < parsedAmount) {
                     setAmountError('Insufficient funds.');
-                    throw new Error('Insufficient funds');
+                    throw new Error('Insufficient balance');
                 }
 
-                const { error: senderUpdateError } = await supabase
+                await supabase
                     .from('Users')
                     .update({ balance: sender.balance - parsedAmount })
                     .eq('id', sender.id);
-
-                const { error: receiverUpdateError } = await supabase
+                await supabase
                     .from('Users')
                     .update({ balance: receiver.balance + parsedAmount })
                     .eq('id', receiver.id);
 
-                if (senderUpdateError || receiverUpdateError) {
-                    throw new Error('Balance update failed.');
-                }
-
-                const updatedUser = { ...currentUser, balance: currentUser.balance - parsedAmount };
-                setCurrentUser(updatedUser);
                 setCurrentBalance(sender.balance - parsedAmount);
+                setCurrentUser({ ...currentUser, balance: sender.balance - parsedAmount });
             }
 
             if (sender.role === 'central_bank') {
-                const { data: tokenSupply, error: receiverError } = await supabase.from('TokenSupply').select('*').single();
-                const { total_minted, distributed, bank_notes_issued, bank_notes_redeemed } = tokenSupply;
+                const { data: supply, error: supplyError } = await supabase.from('TokenSupply').select('*').single();
+                if (supplyError || !supply) throw new Error('TokenSupply fetch failed.');
 
-                // const banknoteTokens = bank_notes_issued ;
-                const nonNoteTokens = total_minted - distributed - bank_notes_issued;
-
-                if (nonNoteTokens < parsedAmount) {
-                    setAmountError('Insufficient funds.');
-                    throw new Error('Insufficient funds');
+                const available = supply.total_minted - supply.distributed - supply.bank_notes_issued;
+                if (available < parsedAmount) {
+                    setAmountError('Insufficient central bank funds.');
+                    throw new Error('Central bank insufficient');
                 }
-                const { error: senderUpdateError } = await supabase
+
+                await supabase
                     .from('TokenSupply')
-                    .update({ distributed: distributed + parsedAmount })
+                    .update({ distributed: supply.distributed + parsedAmount })
                     .eq('id', 1);
-                const { error: receiverUpdateError } = await supabase
+                await supabase
                     .from('Users')
                     .update({ balance: receiver.balance + parsedAmount })
                     .eq('id', receiver.id);
-                if (senderUpdateError || receiverUpdateError) {
-                    throw new Error('Balance update failed.');
-                }
 
-                setCurrentBalance(nonNoteTokens - parsedAmount);
-                setCurrentUser({ ...currentUser });
+                setCurrentBalance(available - parsedAmount);
             }
-            const type = sender.role + '_to_' + receiver.role;
 
-            const { error: transactionError } = await supabase.from('Transactions').insert([
+            await supabase.from('Transactions').insert([
                 {
                     sender: sender.id,
                     receiver: receiver.id,
                     amount: parsedAmount,
                     timestamp: new Date().toISOString(),
                     status: 'completed',
-                    type: type,
+                    type: `${sender.role}_to_${receiver.role}`,
                 },
             ]);
 
-            if (transactionError) {
-                throw new Error('Transaction logging failed.');
-            }
-
-            toast.success('Transaction Successful!', {
-                description: 'Your transaction has been completed successfully.',
-            });
+            setTransactionSuccess(true);
             setShowSendDialog(false);
+            await sleep(200);
+            setShowSuccessDialog(true);
         } catch (error: any) {
-            console.error('Send transaction failed:', error);
-            if (!recipientError && !amountError && !generalError) {
-                setGeneralError(`An unexpected error occurred: ${error.message}`);
-            }
+            console.error('Transaction failed:', error.message);
+            setTransactionSuccess(false);
+            setShowSendDialog(false);
+            await sleep(200);
+            setShowFailureDialog(true);
+            if (!recipientError && !amountError) setGeneralError(error.message);
         } finally {
+            await sleep(1000);
             setIsSending(false);
+            setShowLoadingDialog(false);
         }
     };
 
@@ -372,6 +369,17 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </DialogFooter>
                 </DialogContent>
             </Dialog> */}
+
+            <Dialog open={showLoadingDialog} onOpenChange={setShowLoadingDialog}>
+                <DialogContent className="sm:max-w-[340px] p-6 text-center flex flex-col items-center gap-4">
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Processing Transaction</h2>
+                    <p className="text-sm text-muted-foreground">Please wait while your transaction is being completed.</p>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
@@ -379,7 +387,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </DialogHeader>
                     <div className="flex flex-col items-center justify-center py-6 space-y-4">
                         <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-                            {/* <Check className="h-8 w-8 text-green-600" /> */}
+                            <Check className="h-8 w-8 text-green-600" />
                         </div>
                         <h3 className="text-xl font-semibold">Success!</h3>
                         <p className="text-center text-muted-foreground">Your transaction has been successfully processed.</p>
@@ -414,6 +422,27 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={showFailureDialog} onOpenChange={setShowFailureDialog}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-600">Transaction Failed</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                        <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">❌</div>
+                        <h3 className="text-xl font-semibold text-red-600">Oops!</h3>
+                        <p className="text-center text-muted-foreground">
+                            The transaction failed. {amountError || recipientError || generalError || 'Please try again later.'}
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setShowFailureDialog(false)} className="w-full">
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* QR Code Scanner Modal */}
             <Dialog open={isQRModalOpen} onOpenChange={setQRModalOpen}>
                 <DialogContent>
@@ -447,7 +476,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            
+
             <Dialog open={successfulRedeem} onOpenChange={setSuccessfulRedeem}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>

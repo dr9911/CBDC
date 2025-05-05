@@ -72,6 +72,13 @@ const CommercialBankDashboard = () => {
         fetchRecentTransactions();
     }, [currentUser?.id]);
 
+    const formatGermanWithDot = (value: number): string => {
+        return new Intl.NumberFormat('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value);
+    };
+
     const chartData = {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
         datasets: [
@@ -162,12 +169,7 @@ const CommercialBankDashboard = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-2xl sm:text-3xl font-bold text-gray-800">
-                                {new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }).format(
-                                    commercialBankHoldings
-                                )}{' '}
-                                CBDC
-                            </p>
+                            <p className="text-2xl sm:text-3xl font-bold text-gray-800">{formatGermanWithDot(commercialBankHoldings)} CBDC</p>
                         </CardContent>
                     </Card>
 
