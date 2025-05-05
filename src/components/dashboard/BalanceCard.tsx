@@ -61,9 +61,11 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     // }, [showSendDialog]);
 
     // Handle QR Code Data
-    function handleDataFromQR(data: string) {
+    async function handleDataFromQR(data: string) {
+        setShowLoadingDialog(true);
+        await sleep(2000);
+        setShowLoadingDialog(false);
         console.log('QR Code data:', data);
-        // addToBalance(data);
         if (data.includes('https://')) {
             setShowDetailsBankNote(true);
         } else {
