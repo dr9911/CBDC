@@ -63,7 +63,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     // Handle QR Code Data
     function handleDataFromQR(data: string) {
         console.log('QR Code data:', data);
-        addToBalance(data);
+        // addToBalance(data);
         if (data.includes('https://')) {
             setShowDetailsBankNote(true);
         } else {
