@@ -289,17 +289,7 @@ const CentralBankDashboard = () => {
                                     {/* Distributed & Balance */}
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <motion.div className="w-full sm:w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                            <div className="p-4 bg-gray-100 rounded-lg h-full">
-                                                <div className="flex items-center text-gray-700 text-sm">
-                                                    <Banknote className="h-4 w-4 text-blue-600" />
-                                                    <span className="ml-2 font-medium">Distributed to Banks and Users</span>
-                                                </div>
-                                                <div className="mt-1 text-lg font-semibold text-gray-900">{formatCurrency(distributed)}</div>
-                                            </div>
-                                        </motion.div>
-
-                                        <motion.div className="w-full sm:w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                            <div className="p-4 bg-gray-100 rounded-lg h-full">
+                                            <div className="p-4 bg-slate-100 rounded-lg h-full">
                                                 <div className="flex items-center text-gray-700 text-sm">
                                                     <Banknote className="h-4 w-4 text-indigo-500" />
                                                     <span className="ml-2 font-medium">Central Bank Balance</span>
@@ -307,6 +297,16 @@ const CentralBankDashboard = () => {
                                                 <div className="mt-1 text-lg font-semibold text-gray-900">
                                                     {formatCurrency(total_minted - distributed - bank_notes_issued)}
                                                 </div>
+                                            </div>
+                                        </motion.div>
+
+                                        <motion.div className="w-full sm:w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                                            <div className="p-4 bg-zinc-100 rounded-lg h-full">
+                                                <div className="flex items-center text-gray-700 text-sm">
+                                                    <Banknote className="h-4 w-4 text-blue-600" />
+                                                    <span className="ml-2 font-medium">Distributed to Banks and Users</span>
+                                                </div>
+                                                <div className="mt-1 text-lg font-semibold text-gray-900">{formatCurrency(distributed)}</div>
                                             </div>
                                         </motion.div>
                                     </div>
@@ -328,17 +328,7 @@ const CentralBankDashboard = () => {
                                     {/* DUAL Redeemed & Central Bank DUAL */}
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <motion.div className="w-full sm:w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                            <div className="p-4 bg-gray-100 rounded-lg h-full">
-                                                <div className="flex items-center text-gray-700 text-sm">
-                                                    <Banknote className="h-4 w-4 text-purple-600" />
-                                                    <span className="ml-2 font-medium">DUAL Redeemed</span>
-                                                </div>
-                                                <div className="mt-1 text-lg font-semibold text-gray-900">{formatCurrency(bank_notes_redeemed)}</div>
-                                            </div>
-                                        </motion.div>
-
-                                        <motion.div className="w-full sm:w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                            <div className="p-4 bg-gray-100 rounded-lg h-full">
+                                            <div className="p-4 bg-slate-100 rounded-lg h-full">
                                                 <div className="flex items-center text-gray-700 text-sm">
                                                     <Banknote className="h-4 w-4 text-rose-500" />
                                                     <span className="ml-2 font-medium">Central Bank DUAL</span>
@@ -348,6 +338,16 @@ const CentralBankDashboard = () => {
                                                 </div>
                                             </div>
                                         </motion.div>
+
+                                        <motion.div className="w-full sm:w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                                            <div className="p-4 bg-zinc-100 rounded-lg h-full">
+                                                <div className="flex items-center text-gray-700 text-sm">
+                                                    <Banknote className="h-4 w-4 text-purple-600" />
+                                                    <span className="ml-2 font-medium">DUAL Redeemed</span>
+                                                </div>
+                                                <div className="mt-1 text-lg font-semibold text-gray-900">{formatCurrency(bank_notes_redeemed)}</div>
+                                            </div>
+                                        </motion.div>
                                     </div>
                                 </div>
                             </div>
@@ -355,7 +355,7 @@ const CentralBankDashboard = () => {
                             {/* Row 2: Summary Metrics */}
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                                 <div className="flex flex-col md:flex-row gap-2 mb-3">
-                                    <div className="p-4 bg-gray-100 rounded-lg w-full">
+                                    <div className="p-4 bg-slate-100 rounded-lg w-full">
                                         <div className="flex items-center text-gray-700 text-sm">
                                             <Banknote className="h-4 w-4 text-primary" />
                                             <span className="ml-2 font-medium">Total Central Bank Holdings</span>
@@ -363,7 +363,7 @@ const CentralBankDashboard = () => {
                                         <div className="mt-1 text-lg font-semibold text-gray-900">{formatCurrency(centralBankTotalHoldings)}</div>
                                     </div>
 
-                                    <div className="p-4 bg-gray-100 rounded-lg w-full">
+                                    <div className="p-4 bg-zinc-100 rounded-lg w-full">
                                         <div className="flex items-center text-gray-700 text-sm">
                                             <Banknote className="h-4 w-4 text-green-500" />
                                             <span className="ml-2 font-medium">Total in Circulation</span>
