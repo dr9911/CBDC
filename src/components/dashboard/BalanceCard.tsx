@@ -40,6 +40,8 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     const [sendRecipient, setSendRecipient] = useState('');
     const [sendAmount, setSendAmount] = useState('');
     const [sendNote, setSendNote] = useState('');
+    const [transactionId, setTransactionId] = useState('');
+    const [transaction, setTransaction] = useState(null);
     const [recipientError, setRecipientError] = useState('');
     const [amountError, setAmountError] = useState('');
     const [generalError, setGeneralError] = useState('');
@@ -197,7 +199,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                 setCurrentBalance(available - parsedAmount);
             }
 
-            await supabase.from('Transactions').insert([
+            const {data: transaction, error: transactionError} = await supabase.from('Transactions').insert([
                 {
                     sender: sender.id,
                     receiver: receiver.id,
@@ -206,7 +208,10 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     status: 'completed',
                     type: `${sender.role}_to_${receiver.role}`,
                 },
-            ]);
+            ]).select();
+
+            setTransactionId(transaction[0].id);
+            setTransaction(transaction[0]);
 
             setTransactionSuccess(true);
             setShowSendDialog(false);
@@ -224,6 +229,20 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
             setIsSending(false);
             setShowLoadingDialog(false);
         }
+    };
+
+    const trimId = (id) => {
+        return id ? `${id.slice(0, 6)}...${id.slice(-4)}` : 'N/A';
+    };
+
+    const formatDate = (isoString) => {
+        return new Date(isoString).toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        });
     };
 
     return (
@@ -400,20 +419,17 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Recipient:</span>
-                                <span className="font-medium">{sendRecipient}</span>
+                                <span className="font-medium">{trimId(sendRecipient)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Transaction ID:</span>
                                 <span className="font-medium">
-                                    TX-
-                                    {Math.floor(Math.random() * 1000000)
-                                        .toString()
-                                        .padStart(6, '0')}
+                                   {trimId(transactionId) || 'N/A'} 
                                 </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Date:</span>
-                                <span className="font-medium">{new Date().toLocaleString()}</span>
+                                <span className="font-medium">{transaction?.created_at ? formatDate(transaction.created_at) : 'N/A'}</span>
                             </div>
                         </div>
                     </div>
