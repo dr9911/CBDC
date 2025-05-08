@@ -73,9 +73,9 @@ const DashboardLayout = ({ children, activePage: propActivePage, userName, userA
                 <footer className="border-t border-border p-4 text-xs sm:text-sm text-muted-foreground">
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
                         <div>© 2025 TND Platform. All rights reserved.</div>
-                        <div className="flex items-center space-x-4">
+                        {/* <div className="flex items-center space-x-4">
                             <span>Last Login: {lastLoginTime}</span>
-                        </div>
+                        </div> */}
                     </div>
                 </footer>
             </div>
