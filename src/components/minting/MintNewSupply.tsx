@@ -1,70 +1,59 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Banknote, Calendar, AlertTriangle, CheckCircle2, Key } from 'lucide-react';
+import { Banknote, AlertTriangle, CheckCircle2, Key, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import DashboardLayout from '../layout/DashboardLayout';
-import usersData from '@/data/users.json';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { sendOtpToEmail, verifyOtp } from '@/utils/otpService';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface MintNewSupplyProps {
     totalSupply?: number;
 }
 
 const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
-    // ----------------------------------------------------------------
-    // 1) FORM STATES AND HANDLERS
-    // ----------------------------------------------------------------
     const { currentUser } = useAuth();
 
-    const [name, setName] = useState<string>('');
-    const [currency, setCurrency] = useState<string>('');
+    // form state
     const [numTokens, setNumTokens] = useState<string>('');
-    // Removed issuingPrice state since that section is deleted
-    const [purpose, setPurpose] = useState<string>(''); // will be used as "Remark"
-    // Updated default date to proper ISO format for type="date"
+    const [purpose, setPurpose] = useState<string>('');
     const [documentDate, setDocumentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [errorMessage, setErrorMessage] = useState('');
+
+    // supply, mint result & dialogs
     const [supply, setSupply] = useState<number>(0);
     const [mintId, setMintId] = useState<string>('');
+    const [mfaCode, setMfaCode] = useState<string>('');
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showMfaDialog, setShowMfaDialog] = useState(false);
+    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-    const documentDateRef = useRef<HTMLInputElement>(null);
+    // OTP
+    const [showAuthDialog, setShowAuthDialog] = useState(false);
+    const [authStep, setAuthStep] = useState<'confirm' | 'loading' | 'mfa'>('confirm');
+    const [isVerifying, setIsVerifying] = useState(false);
 
+    // fetch current total supply on mount
     useEffect(() => {
         const fetchSupply = async () => {
-            console.log('Fetching supply from database...');
-            const { data, error } = await supabase.from('TokenSupply').select('total_minted');
-
+            const { data, error } = await supabase.from('TokenSupply').select('total_minted').single();
             if (error) {
                 console.error('Error fetching supply:', error);
-                return;
-            }
-
-            if (data) {
-                setSupply(data[0].total_minted || 0);
+            } else {
+                setSupply(data.total_minted || 0);
             }
         };
-
         fetchSupply();
     }, []);
 
-    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setName(e.target.value);
-    };
-
-    const handleCurrencyChange = (value: string) => {
-        setCurrency(value);
-    };
-
+    // handlers
     const handleNumTokensChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/[^0-9.]/g, '');
-        setNumTokens(value);
+        setNumTokens(e.target.value.replace(/[^0-9.]/g, ''));
     };
-
-    // Removed handleIssuingPriceChange since issuing price section is deleted
 
     const handlePurposeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPurpose(e.target.value);
@@ -74,88 +63,102 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
         setDocumentDate(e.target.value);
     };
 
-    // ----------------------------------------------------------------
-    // 2) DIALOG STATES & METHODS
-    // ----------------------------------------------------------------
-    const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
-    const [showMfaDialog, setShowMfaDialog] = useState<boolean>(false);
-    const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
-    const [mfaCode, setMfaCode] = useState<string>('');
-
     const handleSubmit = () => {
-        setShowConfirmDialog(true);
+        setAuthStep('confirm');
+        setShowAuthDialog(true);
     };
 
-    const handleConfirmMinting = () => {
-        setShowConfirmDialog(false);
-        setShowMfaDialog(true);
+    /** 1️⃣ Send OTP and open the MFA prompt */
+    const handleConfirmMinting = async () => {
+        setAuthStep('loading');
+
+        try {
+            if (currentUser?.email) {
+                await sendOtpToEmail(currentUser.email);
+                console.log(`✅ OTP sent to ${currentUser.email}`);
+                setAuthStep('mfa');
+            } else {
+                console.error('❌ User email not found');
+                setErrorMessage('User email not found.');
+                setShowAuthDialog(false);
+            }
+        } catch (error) {
+            console.error('❌ Error sending OTP:', error.message);
+            setErrorMessage('Failed to send OTP. Please try again.');
+            setShowAuthDialog(false);
+        }
     };
 
+    /** 2️⃣ Verify OTP, insert mint event & notify others */
     const handleVerifyMfa = async () => {
-        setShowMfaDialog(false);
+        try {
+            setIsVerifying(true);
+            setErrorMessage('');
 
-        const { data: mintData, error: mintError } = await supabase
-            .from('CentralBankEvents')
-            .insert({
-                amount: numTokens,
-                minted_by: currentUser?.id,
-                status: 'pending',
-                note: purpose,
-                type: 'mint',
-            })
-            .select();
+            // 🔐 Step 1: Verify OTP
+            await verifyOtp(currentUser.email!, mfaCode);
+            console.log('✅ OTP verified');
 
-        if (mintError) {
-            console.error('Error inserting mint event:', mintError);
-            return;
+            // 🧾 Step 2: Insert mint event
+            const { data: mintData, error: mintError } = await supabase
+                .from('CentralBankEvents')
+                .insert({
+                    amount: Number(numTokens),
+                    minted_by: currentUser.id,
+                    status: 'pending',
+                    note: purpose,
+                    type: 'mint',
+                    document_date: documentDate,
+                })
+                .select()
+                .single();
+
+            if (mintError) throw mintError;
+            setMintId(mintData.id);
+
+            // 📣 Step 3: Notify other central bank users
+            const { data: users, error: usersError } = await supabase.from('Users').select('id').eq('role', 'central_bank').neq('id', currentUser.id);
+
+            if (usersError) throw usersError;
+
+            await Promise.all(
+                users.map((u) =>
+                    supabase.from('Notifications').insert({
+                        user_id: u.id,
+                        message: `New minting request for ${numTokens} tokens`,
+                        type: 'minting_request',
+                        event_id: mintData.id,
+                    })
+                )
+            );
+
+            // ✅ Final: Reset states and show success
+            setShowAuthDialog(false); // hide OTP dialog
+            setShowSuccessDialog(true); // show success dialog
+            setAuthStep('confirm'); // reset for future use
+            setMfaCode(''); // clear OTP input
+        } catch (err: any) {
+            console.error('❌ Verification or mint failed:', err);
+            setErrorMessage(err.message || 'Verification failed');
+        } finally {
+            setIsVerifying(false);
         }
+    };
 
-        setMintId(mintData[0]?.id || '');
-
-        const { data: users, error: usersError } = await supabase.from('Users').select('id').eq('role', 'central_bank').neq('id', currentUser?.id);
-        if (usersError) {
-            console.error('Error fetching users:', usersError);
-            return;
-        }
-
-        if (users && mintData) {
-            users.forEach(async (user) => {
-                console.log('Sending notification to user:', user.id);
-                console.log('Sending mint event id:', mintData[0]?.id);
-                const { error: notificationError } = await supabase.from('Notifications').insert({
-                    user_id: user.id,
-                    message: `New minting request for ${numTokens} tokens`,
-                    type: 'minting_request',
-                    event_id: mintData[0]?.id || '',
-                });
-                if (notificationError) {
-                    console.error('Error inserting notification:', notificationError);
-                }
-            });
-        }
-
-        //This should be a success dialog showing that shows that the request to mint tokens have been initiated and will require approval from others
-        setShowSuccessDialog(true);
+    const handleMfaCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setMfaCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6));
     };
 
     const handleCloseSuccess = () => {
         setShowSuccessDialog(false);
-        setName('');
-        setCurrency('');
         setNumTokens('');
-        // Removed issuingPrice reset
         setPurpose('');
-        setDocumentDate('2025-02-27');
+        setDocumentDate(new Date().toISOString().split('T')[0]);
         setMfaCode('');
+        setErrorMessage('');
     };
 
-    const handleMfaCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
-        setMfaCode(value);
-    };
-
-    // Updated validation: removed issuingPrice condition
-    const isFormValid = numTokens && purpose && documentDate;
+    const isFormValid = Boolean(numTokens && purpose && documentDate);
     const isMfaValid = mfaCode.length === 6;
 
     // ----------------------------------------------------------------
@@ -191,42 +194,15 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
-                            {/* <div className="space-y-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input id="name" value={name} onChange={handleNameChange} className="max-w-xs" />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="currency">Currency</Label>
-                                <Input id="currency" value={currency} onChange={(e) => handleCurrencyChange(e.target.value)} className="max-w-xs" />
-                            </div> */}
-
                             <div className="space-y-2">
                                 <Label htmlFor="num-tokens">Number of tokens</Label>
                                 <Input id="num-tokens" value={numTokens} onChange={handleNumTokensChange} className="max-w-xs" />
                             </div>
-
-                            {/* Issuing Price block removed */}
-
                             <div className="mt-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="remark">Remark</Label>
                                     <Input id="remark" value={purpose} onChange={handlePurposeChange} className="max-w-xs" />
                                 </div>
-
-                                {/* <div className="space-y-2 mt-4">
-                                    <Label htmlFor="document-date">Document date</Label>
-                                    <div className="relative">
-                                        <Input
-                                            id="document-date"
-                                            type="date"
-                                            ref={documentDateRef}
-                                            value={documentDate}
-                                            onChange={handleDocumentDateChange}
-                                            className="w-[140px]"
-                                        />
-                                    </div>
-                                </div> */}
                             </div>
                         </div>
                     </CardContent>
@@ -239,84 +215,130 @@ const MintNewSupply = ({ totalSupply = 10000000 }: MintNewSupplyProps) => {
                 </Card>
             </div>
 
-            {/* CONFIRMATION DIALOG */}
-            <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+            {/* CONFIRMATION DIALOG + MFA Dialog */}
+            <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Confirm Minting Operation</DialogTitle>
-                        <DialogDescription>Please review the details of this minting operation before proceeding.</DialogDescription>
+                        <DialogTitle>
+                            {authStep === 'confirm'
+                                ? 'Confirm Minting Operation'
+                                : authStep === 'loading'
+                                  ? 'Sending Verification Code...'
+                                  : 'Email Verification Required'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {authStep === 'confirm'
+                                ? 'Please review the details of this minting operation before proceeding.'
+                                : authStep === 'mfa'
+                                  ? 'A 6-digit OTP has been sent to your email. Enter it below to verify:'
+                                  : ''}
+                        </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="bg-muted p-4 rounded-lg space-y-4">
-                            {/* <div className="flex justify-between">
-                                <span className="text-muted-foreground">Name:</span>
-                                <span className="font-medium">{name}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Currency:</span>
-                                <span className="font-medium">{currency ? currency.toUpperCase() : ''}</span>
-                            </div> */}
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Number of Tokens:</span>
-                                <span className="font-medium">{numTokens ? Number(numTokens).toLocaleString() : '0'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Remark:</span>
-                                <span className="font-medium">{purpose}</span>
-                            </div>
-                            {/* <div className="flex justify-between">
-                                <span className="text-muted-foreground">Document Date:</span>
-                                <span className="font-medium">{documentDate}</span>
-                            </div> */}
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Date:</span>
-                                <span className="font-medium">{new Date().toLocaleString()}</span>
-                            </div>
-                        </div>
-                        <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start gap-2">
-                            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
-                            <div>
-                                <p className="text-sm text-amber-800 font-medium">This action requires additional verification</p>
-                                <p className="text-xs text-amber-700 mt-1">You will need to complete two-factor authentication to proceed.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleConfirmMinting}>Proceed to Authentication</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
-            {/* MFA DIALOG */}
-            <Dialog open={showMfaDialog} onOpenChange={setShowMfaDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Two-Factor Authentication</DialogTitle>
-                        <DialogDescription>Enter the 6-digit code from your authenticator app to verify your identity.</DialogDescription>
-                    </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="flex flex-col items-center justify-center gap-4">
-                            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Key className="h-8 w-8 text-primary" />
+                        {authStep === 'confirm' && (
+                            <>
+                                <div className="bg-muted p-4 rounded-lg space-y-4">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Number of Tokens:</span>
+                                        <span className="font-medium">{numTokens ? Number(numTokens).toLocaleString() : '0'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Remark:</span>
+                                        <span className="font-medium">{purpose}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Date:</span>
+                                        <span className="font-medium">{new Date().toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm text-amber-800 font-medium">This action requires email verification</p>
+                                        <p className="text-xs text-amber-700 mt-1">An OTP code will be sent to your email. Enter it to confirm minting.</p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {authStep === 'loading' && (
+                            <div className="flex justify-center items-center py-10">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             </div>
-                            <div className="text-center">
-                                <p className="text-sm text-muted-foreground">A secure 6-digit code has been sent to your authenticator app</p>
+                        )}
+
+                        {authStep === 'mfa' && (
+                            <div className="flex flex-col items-center justify-center gap-6">
+                                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <Key className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm text-muted-foreground">
+                                        Check your inbox for the OTP code sent to <strong>{currentUser?.email}</strong>.
+                                    </p>
+                                </div>
+
+                                <div
+                                    className="flex gap-2 justify-center cursor-text"
+                                    onClick={() => {
+                                        document.getElementById('hidden-otp-input')?.focus();
+                                    }}
+                                >
+                                    {Array.from({ length: 6 }).map((_, idx) => {
+                                        const isCurrent = idx === mfaCode.length; // current input index
+                                        const isFilled = idx < mfaCode.length;
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className={`w-10 h-12 rounded-md border ${
+                                                    isCurrent ? 'border-primary' : 'border-input'
+                                                } bg-background text-xl font-mono text-center flex items-center justify-center`}
+                                            >
+                                                {isFilled ? mfaCode[idx] : isCurrent ? <span className="animate-pulse text-muted-foreground">|</span> : ''}
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* Hidden real input */}
+                                    <input
+                                        id="hidden-otp-input"
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoFocus
+                                        maxLength={6}
+                                        className="sr-only"
+                                        value={mfaCode}
+                                        onChange={handleMfaCodeChange}
+                                    />
+                                </div>
+
+                                {/* Error Message */}
+                                {errorMessage && <p className="mt-2 text-sm text-red-600 text-center">{errorMessage}</p>}
                             </div>
-                            <div className="w-full max-w-[200px]">
-                                <Input value={mfaCode} onChange={handleMfaCodeChange} maxLength={6} className="text-center text-xl tracking-widest" />
-                            </div>
-                        </div>
+                        )}
                     </div>
+
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowMfaDialog(false)}>
+                        <Button variant="outline" onClick={() => setShowAuthDialog(false)} disabled={authStep === 'loading' || isVerifying}>
                             Cancel
                         </Button>
-                        <Button onClick={handleVerifyMfa} disabled={!isMfaValid}>
-                            Verify & Submit
-                        </Button>
+
+                        {authStep === 'confirm' && <Button onClick={handleConfirmMinting}>Proceed to Authentication</Button>}
+
+                        {authStep === 'mfa' && (
+                            <Button onClick={handleVerifyMfa} disabled={!isMfaValid || isVerifying}>
+                                {isVerifying ? (
+                                    <div className="flex items-center gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Verifying...
+                                    </div>
+                                ) : (
+                                    'Verify & Submit'
+                                )}
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
