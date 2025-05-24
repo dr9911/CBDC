@@ -48,6 +48,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     const [isSending, setIsSending] = useState(false);
     const [transactionSuccess, setTransactionSuccess] = useState(false);
     const [showFailureDialog, setShowFailureDialog] = useState(false);
+    const [banknote, setBanknote] = useState<any>(null); // to hold dynamic values
 
     useEffect(() => {
         setCurrentBalance(initialBalance);
@@ -62,22 +63,132 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
     //     setIsSending(false);
     // }, [showSendDialog]);
 
-    // Handle QR Code Data
-    async function handleDataFromQR(data: string) {
-        setShowLoadingDialog(true);
-        await sleep(2000);
-        setShowLoadingDialog(false);
-        console.log('QR Code data:', data);
-        if (data.includes('https://')) {
-            setShowDetailsBankNote(true);
-        } else {
-            setSuccessfulRedeem(true);
-            addToBalance(data);
+    function extractKeyFromURL(value: string) {
+        try {
+            const url = new URL(value);
+            const segments = url.pathname.split('/').filter(Boolean); // removes empty segments
+            return segments[segments.length - 1]; // returns the last non-empty segment
+        } catch {
+            return value; // Not a URL, assume it's already a key
         }
-
-        setQRModalOpen(false);
     }
 
+    // Utility to safely Base64-encode the raw scanned key
+    function encodeToBase64(str: string): string {
+        const encoder = new TextEncoder();
+        const byteArray = encoder.encode(str); // Convert to Uint8Array
+
+        let binary = '';
+        byteArray.forEach((b) => (binary += String.fromCharCode(b))); // Convert bytes to binary string
+
+        const encoded = btoa(binary); // Encode to Base64
+
+        // Log the original and the encoded value
+        console.log('[encodeToBase64] original string:', str);
+        console.log('[encodeToBase64] encoded Base64:', encoded);
+
+        return encoded;
+    }
+
+    async function handleDataFromQR(scannedValue: string) {
+        setShowLoadingDialog(true);
+        await sleep(1500);
+
+        const scannedKey = extractKeyFromURL(scannedValue);
+
+        try {
+            // Step 1: Try to match public_key
+            let { data: note, error } = await supabase.from('banknotes').select('*').eq('public_key', scannedKey).single();
+
+            if (note) {
+                setShowLoadingDialog(false);
+                setBanknote(note);
+                setShowDetailsBankNote(true);
+                setQRModalOpen(false);
+                return;
+            }
+
+            // Step 2: Encode scanned raw key and match private_key_encoded
+            const encodedKey = encodeToBase64(scannedKey);
+
+            ({ data: note, error } = await supabase.from('banknotes').select('*').eq('private_key_encoded', encodedKey).single());
+
+            setShowLoadingDialog(false);
+
+            if (!note || error) {
+                toast.error('Invalid or unknown banknote.');
+                return;
+            }
+
+            if (note.status === 'redeemed' && !note.is_test) {
+                toast.error('Banknote has already been redeemed.');
+                return;
+            }
+
+            const redeemAmount = note.amount || 20;
+
+            const { error: userUpdateErr } = await supabase
+                .from('Users')
+                .update({ balance: currentUser.balance + redeemAmount })
+                .eq('id', currentUser.id);
+
+            if (userUpdateErr) {
+                toast.error('Failed to credit user.');
+                return;
+            }
+
+            const { data: supplyData, error: supplyErr } = await supabase.from('TokenSupply').select('bank_notes_redeemed').eq('id', 1).single();
+
+            if (!supplyErr && supplyData) {
+                const { error: updateSupplyErr } = await supabase
+                    .from('TokenSupply')
+                    .update({
+                        bank_notes_redeemed: supplyData.bank_notes_redeemed + redeemAmount,
+                    })
+                    .eq('id', 1);
+                if (updateSupplyErr) console.error(updateSupplyErr);
+            }
+
+            const { error: noteUpdateErr } = await supabase
+                .from('banknotes')
+                .update({
+                    status: 'redeemed',
+                    redeemed_by: currentUser.id,
+                    redeemed_at: new Date().toISOString(),
+                })
+                .eq('id', note.id);
+
+            if (noteUpdateErr) {
+                toast.error('Failed to update banknote.');
+                return;
+            }
+
+            if (note.is_test) {
+                await supabase
+                    .from('banknotes')
+                    .update({
+                        status: 'active',
+                        redeemed_by: null,
+                        redeemed_at: null,
+                    })
+                    .eq('id', note.id);
+            }
+
+            const newBalance = currentUser.balance + redeemAmount;
+            setCurrentBalance(newBalance);
+            setCurrentUser({ ...currentUser, balance: newBalance });
+            setBanknote(note);
+            setSuccessfulRedeem(true);
+            setQRModalOpen(false);
+        } catch (err) {
+            console.error('Redeem failed:', err);
+            setShowLoadingDialog(false);
+            toast.error('Something went wrong.');
+        }
+    }
+
+
+    // add ToBalance is not used now
     async function addToBalance(data: string) {
         const valueToAdd = 20;
 
@@ -199,16 +310,19 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                 setCurrentBalance(available - parsedAmount);
             }
 
-            const {data: transaction, error: transactionError} = await supabase.from('Transactions').insert([
-                {
-                    sender: sender.id,
-                    receiver: receiver.id,
-                    amount: parsedAmount,
-                    timestamp: new Date().toISOString(),
-                    status: 'completed',
-                    type: `${sender.role}_to_${receiver.role}`,
-                },
-            ]).select();
+            const { data: transaction, error: transactionError } = await supabase
+                .from('Transactions')
+                .insert([
+                    {
+                        sender: sender.id,
+                        receiver: receiver.id,
+                        amount: parsedAmount,
+                        timestamp: new Date().toISOString(),
+                        status: 'completed',
+                        type: `${sender.role}_to_${receiver.role}`,
+                    },
+                ])
+                .select();
 
             setTransactionId(transaction[0].id);
             setTransaction(transaction[0]);
@@ -423,9 +537,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Transaction ID:</span>
-                                <span className="font-medium">
-                                   {trimId(transactionId) || 'N/A'} 
-                                </span>
+                                <span className="font-medium">{trimId(transactionId) || 'N/A'}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Date:</span>
@@ -467,23 +579,29 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                     <QRCodeScannerComponent onScanSuccess={handleDataFromQR} onCancel={() => setQRModalOpen(false)} />
                 </DialogContent>
             </Dialog>
+
             <Dialog open={showDetailsBankNote} onOpenChange={setShowDetailsBankNote}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
                         <DialogTitle>DUAL Details</DialogTitle>
                     </DialogHeader>
                     <div className="flex flex-col items-center justify-center py-6 space-y-4">
-                        <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">{/* You can put an icon here if needed */}</div>
-                        <h3 className="text-xl font-semibold">DUAL</h3>
-                        {/* <p className="text-center text-muted-foreground">Details of the DUAL.</p> */}
+                        <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                            <QrCode className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-xl font-semibold">Banknote Info</h3>
                         <div className="bg-muted p-4 rounded-lg w-full space-y-2">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Amount:</span>
-                                <span className="font-medium">20 DUALS</span>
+                                <span className="font-medium">{banknote?.amount || 'N/A'} DUAL</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Owner:</span>
-                                <span className="font-medium">Central Bank</span>
+                                <span className="text-muted-foreground">Source:</span>
+                                <span className="font-medium">{banknote?.source || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Status:</span>
+                                <span className="font-medium capitalize">{banknote?.status}</span>
                             </div>
                         </div>
                     </div>
@@ -504,14 +622,14 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                         <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
                             <BadgeCheck className="h-8 w-8 text-blue-600" />
                         </div>
-                        <h3 className="text-xl font-semibold">20 DUAL Deposited</h3>
+                        <h3 className="text-xl font-semibold">{banknote?.amount || 0} DUAL Deposited</h3>
                         <p className="text-center text-muted-foreground">
-                            The bank note has been successfully redeemed and the amount has been added to your wallet.
+                            The banknote has been successfully redeemed and the amount has been added to your wallet.
                         </p>
                         <div className="bg-muted p-4 rounded-lg w-full space-y-2">
                             <div className="flex items-center space-x-2">
                                 <Wallet className="text-muted-foreground h-5 w-5" />
-                                <span className="font-medium">Wallet credited with 20 DUAL</span>
+                                <span className="font-medium">Wallet credited with {banknote?.amount || 0} DUAL</span>
                             </div>
                             <div className="flex justify-between text-sm text-muted-foreground">
                                 <span>Time:</span>
@@ -519,7 +637,7 @@ const BalanceCard = ({ balance: initialBalance = 0, currency = 'CBDC' }: Balance
                             </div>
                             <div className="flex justify-between text-sm text-muted-foreground">
                                 <span>Source:</span>
-                                <span>Central Bank</span>
+                                <span>{banknote?.source || 'N/A'}</span>
                             </div>
                         </div>
                     </div>
