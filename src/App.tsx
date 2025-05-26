@@ -30,6 +30,7 @@ function LoadingScreen({ title = 'Loading Dashboard', message = 'Preparing your 
 }
 
 function App() {
+    console.log('Loading App with user:');
     const { isAuthenticated, currentUser } = useAuth();
 
     const getRedirectPath = () => {
