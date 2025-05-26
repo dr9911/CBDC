@@ -18,6 +18,7 @@ interface HomeProps {
 }
 
 const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: HomeProps) => {
+    console.log('Home Component')
     const { currentUser } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -75,7 +76,7 @@ const Home = ({ userName, userAvatar, isAuthenticated, sessionTimeRemaining }: H
                                 <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Dashboard</h1>
 
                                 {/* Cards side-by-side */}
-                                <div className="flex flex-col md:flex-row md:items-start md:gap-4 mb-6 sm:mb-8">
+                                <div className="flex flex-col md:flex-row md:items-start md:gap-1 mb-6 sm:mb-8">
                                     <div className="w-full md:w-1/2">
                                         <BalanceCard balance={currentUser.balance} />
                                     </div>

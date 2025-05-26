@@ -33,6 +33,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 const CentralBankDashboard = () => {
+    console.log('Loading Central Bank Dashboard');
     const { currentUser } = useAuth();
     const userId = currentUser?.id;
 
