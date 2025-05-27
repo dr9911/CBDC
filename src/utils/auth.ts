@@ -6,15 +6,11 @@ import { supabase } from '@/utils/supabase';
 
 export async function authenticateUser(email: string, password: string) {
     // We have to check whether email exist in the database or not
-    const { data, error } = await supabase.from('Users').select('*');
-  
-    localStorage.setItem('users', JSON.stringify(data));
-
-    const user = (data as User[]).find((u) => u.email === email);
-    console.log('User:', user);
+    const { data, error } = await supabase.from('Users').select('*').eq('email', email).single(); // assumes email is unique
+    const user = JSON.stringify(data) !== 'null' ? data as User : null;
     // also we update last login time of this user in the database
     if (user) {
-        const {data, error} = await supabase.from('Users').update({ last_login: new Date() }).eq('id', user.id);
+        const { data, error } = await supabase.from('Users').update({ last_login: new Date() }).eq('id', user.id);
         if (error) {
             console.error('Error updating last login:', error);
         }
